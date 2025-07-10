@@ -273,9 +273,9 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('date').valueAsDate = new Date();
     }
 
-    // Load customers from customers.json for dropdown
+    // Load customers from API route instead of direct file access
     if (document.getElementById('customer')) {
-        fetch('/data/customers.json')
+        fetch('/api/customers')
             .then(r => r.json())
             .then(data => {
                 customers = data;
@@ -336,11 +336,11 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         
-        fetch('/data/services.json')
+        fetch('/api/services')
             .then(r => r.json())
             .then(data => {
                 services = data;
-                fetch('/data/inventory.json')
+                fetch('/api/inventory')
                     .then(r => r.json())
                     .then(invData => {
                         inventory = invData;

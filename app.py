@@ -19,6 +19,31 @@ except:
 
 app = Flask(__name__)
 
+# API routes for accessing data files
+@app.route('/api/customers')
+def api_customers():
+    customers_path = get_data_file_path('customers.json')
+    if os.path.exists(customers_path):
+        with open(customers_path, 'r') as f:
+            return json.load(f)
+    return []
+
+@app.route('/api/services')
+def api_services():
+    services_path = get_data_file_path('services.json')
+    if os.path.exists(services_path):
+        with open(services_path, 'r') as f:
+            return json.load(f)
+    return []
+
+@app.route('/api/inventory')
+def api_inventory():
+    inventory_path = get_data_file_path('inventory.json')
+    if os.path.exists(inventory_path):
+        with open(inventory_path, 'r') as f:
+            return json.load(f)
+    return []
+
 @app.route('/')
 def analyst():
     chart = None
