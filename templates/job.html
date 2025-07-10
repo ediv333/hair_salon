@@ -1,0 +1,129 @@
+{% extends 'layout.html' %}
+{% block content %}
+<h2 style="color:#5a189a; margin-bottom:24px;">📅 Add Job</h2>
+{% if disable_form %}
+<div style="color: #e63946; font-weight: bold; margin-bottom: 24px;">
+    Cannot add jobs: services or inventory data is missing.
+</div>
+{% else %}
+<form method="POST" id="jobForm" style="max-width:500px;margin:auto;display:flex;flex-direction:column;gap:18px;">
+    <label>Date:
+        <input type="date" name="date" id="date" required style="width:100%;padding:8px;border-radius:6px;border:1px solid #ccc;">
+    </label>
+    <label>Customer:
+        <select name="customer" id="customer" required style="width:100%;padding:8px;border-radius:6px;border:1px solid #ccc;">
+            <option value="" disabled selected>Select customer</option>
+        </select>
+    </label>
+    <label>Item:
+        <select name="item" id="item" required style="width:100%;padding:8px;border-radius:6px;border:1px solid #ccc;">
+            <option value="" disabled selected>Select item</option>
+        </select>
+    </label>
+    <label>Quantity:
+        <input type="number" name="quantity" id="quantity" min="1" value="1" required style="width:100%;padding:8px;border-radius:6px;border:1px solid #ccc;">
+    </label>
+    <label>Price:
+        <input type="number" name="price" id="price" step="0.01" required style="width:100%;padding:8px;border-radius:6px;border:1px solid #ccc;">
+    </label>
+    <input type="submit" value="Add Job" style="background:#5a189a;color:#fff;padding:10px 0;border:none;border-radius:6px;font-weight:600;cursor:pointer;">
+</form>
+<script>
+let customers = [];
+let services = [];
+let inventory = [];
+let costMap = {};
+let priceMap = {};
+
+document.addEventListener('DOMContentLoaded', function() {
+    if (document.getElementById('date')) {
+        document.getElementById('date').valueAsDate = new Date();
+    }
+
+    // Load customers from customers.json for dropdown
+    if (document.getElementById('customer')) {
+        fetch('{{ url_for("static", filename="customers.json") }}')
+            .then(r => r.json())
+            .then(data => {
+                customers = data;
+                let sel = document.getElementById('customer');
+                customers.forEach(c => {
+                    if (c.name) {
+                        let opt = document.createElement('option');
+                        opt.value = c.name;
+                        opt.textContent = c.name;
+                        sel.appendChild(opt);
+                    }
+                });
+            });
+    }
+
+    if (document.getElementById('item')) {
+        fetch('{{ url_for("static", filename="services.json") }}')
+            .then(r => r.json())
+            .then(data => {
+                services = data;
+                fetch('{{ url_for("static", filename="inventory.json") }}')
+                    .then(r => r.json())
+                    .then(invData => {
+                        inventory = invData;
+                        let itemSel = document.getElementById('item');
+                        let itemSet = new Set();
+                        services.forEach(s => {
+                            if (!itemSet.has(s.name)) {
+                                let opt = document.createElement('option');
+                                opt.value = s.name;
+                                opt.textContent = s.name;
+                                itemSel.appendChild(opt);
+                                costMap[s.name] = s.cost;
+                                priceMap[s.name] = s.price;
+                                itemSet.add(s.name);
+                            }
+                        });
+                        inventory.forEach(i => {
+                            if (!itemSet.has(i.name)) {
+                                let opt = document.createElement('option');
+                                opt.value = i.name;
+                                opt.textContent = i.name;
+                                itemSel.appendChild(opt);
+                                costMap[i.name] = i.cost;
+                                priceMap[i.name] = i.retail_price;
+                                itemSet.add(i.name);
+                            }
+                        });
+                    });
+            });
+
+        document.getElementById('item').addEventListener('change', function() {
+            let iname = this.value;
+            document.getElementById('price').value = priceMap[iname] !== undefined ? priceMap[iname] : '';
+        });
+    }
+
+    if (document.getElementById('price')) {
+        document.getElementById('price').addEventListener('input', function() {
+            let iname = document.getElementById('item').value;
+            let cost = costMap[iname] !== undefined ? parseFloat(costMap[iname]) : 0;
+            let price = parseFloat(this.value);
+            if (!isNaN(price) && price <= cost) {
+                alert('Warning: Price is equal to or less than cost!');
+            }
+        });
+    }
+
+    if (document.getElementById('jobForm')) {
+        document.getElementById('jobForm').addEventListener('submit', function(e) {
+            let iname = document.getElementById('item').value;
+            let cost = costMap[iname] !== undefined ? parseFloat(costMap[iname]) : 0;
+            let price = parseFloat(document.getElementById('price').value);
+            if (!isNaN(price) && price <= cost) {
+                if (!confirm('Price is equal to or less than cost. Continue?')) {
+                    e.preventDefault();
+                }
+            }
+        });
+    }
+});
+</script>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,80 @@
+{% extends 'layout.html' %}
+{% block content %}
+<h2 style="color:#5a189a; margin-bottom:24px;">👤 Customers</h2>
+
+<!-- Search Customer Form -->
+<form method="get" style="margin-bottom:24px;display:flex;gap:12px;align-items:center;max-width:400px;">
+    <input type="text" name="search" placeholder="Search by name" value="{{ search }}" style="padding:8px;border-radius:6px;border:1px solid #ccc;flex:1;">
+    <input type="submit" value="Search" style="background:#5a189a;color:#fff;padding:8px 18px;border:none;border-radius:6px;font-weight:600;cursor:pointer;">
+    {% if search %}
+    <a href="{{ url_for('customers') }}" style="margin-left:8px;color:#5a189a;text-decoration:underline;">Clear</a>
+    {% endif %}
+</form>
+
+<!-- Show Customers Table -->
+<table style="width:100%;border-collapse:collapse;margin-bottom:32px;">
+    <thead>
+        <tr style="background:#e0aaff;">
+            <th style="padding:8px;">Name</th>
+            <th style="padding:8px;">Phone</th>
+            <th style="padding:8px;">Birthday</th>
+            <th style="padding:8px;">Note</th>
+            <th style="padding:8px;">Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for c in customers %}
+        <tr style="background:#f7f7fa;">
+            <td style="padding:8px;">{{ c.name }}</td>
+            <td style="padding:8px;">{{ c.phone }}</td>
+            <td style="padding:8px;">{{ c.birthday }}</td>
+            <td style="padding:8px;">{{ c.note }}</td>
+            <td style="padding:8px;">
+                <button onclick="showUpdate({{ loop.index0 }}, '{{ c.name|escape }}', '{{ c.phone|escape }}', '{{ c.birthday|escape }}', `{{ c.note|escape }}`)" style="background:#5a189a;color:#fff;border:none;padding:6px 12px;border-radius:5px;cursor:pointer;">Update</button>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- Add Customer Form -->
+<h3 style="color:#5a189a;">Add Customer</h3>
+<form method="POST" style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:32px;">
+    <input type="hidden" name="action" value="add">
+    <input type="text" name="name" placeholder="Name" required style="padding:8px;border-radius:6px;border:1px solid #ccc;">
+    <input type="text" name="phone" placeholder="Phone" style="padding:8px;border-radius:6px;border:1px solid #ccc;">
+    <input type="text" name="birthday" placeholder="Birthday (MM-DD)" style="padding:8px;border-radius:6px;border:1px solid #ccc;width:110px;">
+    <input type="text" name="note" placeholder="Note" style="padding:8px;border-radius:6px;border:1px solid #ccc;flex:2;">
+    <input type="submit" value="Add" style="background:#5a189a;color:#fff;padding:8px 18px;border:none;border-radius:6px;font-weight:600;cursor:pointer;">
+</form>
+
+<!-- Update Customer Form (hidden by default) -->
+<div id="updateFormDiv" style="display:none;">
+    <h3 style="color:#5a189a;">Update Customer</h3>
+    <form method="POST" id="updateForm" style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
+        <input type="hidden" name="action" value="update">
+        <input type="hidden" name="idx" id="updateIdx">
+        <input type="text" name="name" id="updateName" placeholder="Name" required style="padding:8px;border-radius:6px;border:1px solid #ccc;">
+        <input type="text" name="phone" id="updatePhone" placeholder="Phone" style="padding:8px;border-radius:6px;border:1px solid #ccc;">
+        <input type="text" name="birthday" id="updateBirthday" placeholder="Birthday (MM-DD)" style="padding:8px;border-radius:6px;border:1px solid #ccc;width:110px;">
+        <input type="text" name="note" id="updateNote" placeholder="Note" style="padding:8px;border-radius:6px;border:1px solid #ccc;flex:2;">
+        <input type="submit" value="Update" style="background:#5a189a;color:#fff;padding:8px 18px;border:none;border-radius:6px;font-weight:600;cursor:pointer;">
+        <button type="button" onclick="hideUpdate()" style="background:#ccc;color:#222;padding:8px 18px;border:none;border-radius:6px;font-weight:600;cursor:pointer;">Cancel</button>
+    </form>
+</div>
+
+<script>
+function showUpdate(idx, name, phone, birthday, note) {
+    document.getElementById('updateFormDiv').style.display = 'block';
+    document.getElementById('updateIdx').value = idx;
+    document.getElementById('updateName').value = name;
+    document.getElementById('updatePhone').value = phone;
+    document.getElementById('updateBirthday').value = birthday;
+    document.getElementById('updateNote').value = note;
+    window.scrollTo({top: document.getElementById('updateFormDiv').offsetTop - 60, behavior: 'smooth'});
+}
+function hideUpdate() {
+    document.getElementById('updateFormDiv').style.display = 'none';
+}
+</script>
+{% endblock %}

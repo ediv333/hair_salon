@@ -1,0 +1,32 @@
+[
+  {
+    "name": "Shampoo Bla",
+    "initial_quantity": 5,
+    "current_quantity": 3,
+    "cost": 100,
+    "retail_price": 200,
+    "discount": 0,
+    "last_date_sell": "2025-07-09",
+    "date_purchase": "2025-07-09"
+  },
+  {
+    "name": "Shampoo Bla-1",
+    "initial_quantity": 5,
+    "current_quantity": 4,
+    "cost": 200,
+    "retail_price": 300,
+    "discount": 0,
+    "last_date_sell": "2025-07-09",
+    "date_purchase": "2025-07-09"
+  },
+  {
+    "name": "Shampoo Bla-2",
+    "initial_quantity": 10,
+    "current_quantity": 7,
+    "cost": 200,
+    "retail_price": 350,
+    "discount": 0,
+    "last_date_sell": "2025-07-09",
+    "date_purchase": "2025-07-09"
+  }
+]

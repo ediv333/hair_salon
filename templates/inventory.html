@@ -1,0 +1,107 @@
+{% extends 'layout.html' %}
+{% block content %}
+<h2 style="color:#5a189a; margin-bottom:24px;">📦 Inventory</h2>
+
+<!-- Search Inventory Form -->
+<form method="get" style="margin-bottom:24px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+    <input type="text" name="search_name" placeholder="Search by name" value="{{ search_name }}" style="padding:8px;border-radius:6px;border:1px solid #ccc;">
+    <input type="submit" value="Search" style="background:#5a189a;color:#fff;padding:8px 18px;border:none;border-radius:6px;font-weight:600;cursor:pointer;">
+    {% if search_name %}
+    <a href="{{ url_for('inventory') }}" style="margin-left:8px;color:#5a189a;text-decoration:underline;">Clear</a>
+    {% endif %}
+</form>
+
+<div style="max-width: 700px; margin: 0 auto;">
+    <!-- Show Inventory Table -->
+    <table style="width:100%;border-collapse:collapse;margin-bottom:32px;">
+        <thead>
+            <tr style="background:#e0aaff;">
+                <th style="padding:8px;">Name</th>
+                <th style="padding:8px;">Initial Qty</th>
+                <th style="padding:8px;">Current Qty</th>
+                <th style="padding:8px;">Cost</th>
+                <th style="padding:8px;">Retail Price</th>
+                <th style="padding:8px;">Discount</th>
+                <th style="padding:8px;">Last Sell</th>
+                <th style="padding:8px;">Purchase Date</th>
+                <th style="padding:8px;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in inventory %}
+            <tr style="background:#f7f7fa;">
+                <td style="padding:8px;">{{ item.name }}</td>
+                <td style="padding:8px;">{{ item.initial_quantity }}</td>
+                <td style="padding:8px;">{{ item.current_quantity }}</td>
+                <td style="padding:8px;">{{ item.cost }}</td>
+                <td style="padding:8px;">{{ item.retail_price }}</td>
+                <td style="padding:8px;">{{ item.discount }}</td>
+                <td style="padding:8px;">{{ item.last_date_sell }}</td>
+                <td style="padding:8px;">{{ item.date_purchase }}</td>
+                <td style="padding:8px;">
+                    <button onclick="showUpdate({{ loop.index0 }}, '{{ item.name|escape }}', '{{ item.initial_quantity|escape }}', '{{ item.current_quantity|escape }}', '{{ item.cost|escape }}', '{{ item.retail_price|escape }}', '{{ item.discount|escape }}', '{{ item.last_date_sell|escape }}', '{{ item.date_purchase|escape }}')" style="background:#5a189a;color:#fff;border:none;padding:6px 12px;border-radius:5px;cursor:pointer;">Update</button>
+                    <form method="POST" style="display:inline;">
+                        <input type="hidden" name="action" value="remove">
+                        <input type="hidden" name="idx" value="{{ loop.index0 }}">
+                        <button type="submit" onclick="return confirm('Remove this item?')" style="background:#e63946;color:#fff;border:none;padding:6px 12px;border-radius:5px;cursor:pointer;">Remove</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Add Inventory Form -->
+    <h3 style="color:#5a189a;">Add Inventory Item</h3>
+    <form method="POST" style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:32px;">
+        <input type="hidden" name="action" value="add">
+        <input type="text" name="name" placeholder="Name" required style="padding:8px;border-radius:6px;border:1px solid #ccc;">
+        <input type="number" name="initial_quantity" placeholder="Initial Qty" required style="padding:8px;border-radius:6px;border:1px solid #ccc;width:90px;">
+        <input type="number" name="current_quantity" placeholder="Current Qty" required style="padding:8px;border-radius:6px;border:1px solid #ccc;width:90px;">
+        <input type="number" name="cost" placeholder="Cost" step="0.01" required style="padding:8px;border-radius:6px;border:1px solid #ccc;width:90px;">
+        <input type="number" name="retail_price" placeholder="Retail Price" step="0.01" required style="padding:8px;border-radius:6px;border:1px solid #ccc;width:110px;">
+        <input type="number" name="discount" placeholder="Discount" step="0.01" style="padding:8px;border-radius:6px;border:1px solid #ccc;width:90px;">
+        <input type="date" name="last_date_sell" placeholder="Last Sell" style="padding:8px;border-radius:6px;border:1px solid #ccc;">
+        <input type="date" name="date_purchase" placeholder="Purchase Date" style="padding:8px;border-radius:6px;border:1px solid #ccc;">
+        <input type="submit" value="Add" style="background:#5a189a;color:#fff;padding:8px 18px;border:none;border-radius:6px;font-weight:600;cursor:pointer;">
+    </form>
+
+    <!-- Update Inventory Form (hidden by default) -->
+    <div id="updateFormDiv" style="display:none;">
+        <h3 style="color:#5a189a;">Update Inventory Item</h3>
+        <form method="POST" id="updateForm" style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
+            <input type="hidden" name="action" value="update">
+            <input type="hidden" name="idx" id="updateIdx">
+            <input type="text" name="name" id="updateName" placeholder="Name" required style="padding:8px;border-radius:6px;border:1px solid #ccc;">
+            <input type="number" name="initial_quantity" id="updateInitialQuantity" placeholder="Initial Qty" required style="padding:8px;border-radius:6px;border:1px solid #ccc;width:90px;">
+            <input type="number" name="current_quantity" id="updateCurrentQuantity" placeholder="Current Qty" required style="padding:8px;border-radius:6px;border:1px solid #ccc;width:90px;">
+            <input type="number" name="cost" id="updateCost" placeholder="Cost" step="0.01" required style="padding:8px;border-radius:6px;border:1px solid #ccc;width:90px;">
+            <input type="number" name="retail_price" id="updateRetailPrice" placeholder="Retail Price" step="0.01" required style="padding:8px;border-radius:6px;border:1px solid #ccc;width:110px;">
+            <input type="number" name="discount" id="updateDiscount" placeholder="Discount" step="0.01" style="padding:8px;border-radius:6px;border:1px solid #ccc;width:90px;">
+            <input type="date" name="last_date_sell" id="updateLastDateSell" placeholder="Last Sell" style="padding:8px;border-radius:6px;border:1px solid #ccc;">
+            <input type="date" name="date_purchase" id="updateDatePurchase" placeholder="Purchase Date" style="padding:8px;border-radius:6px;border:1px solid #ccc;">
+            <input type="submit" value="Update" style="background:#5a189a;color:#fff;padding:8px 18px;border:none;border-radius:6px;font-weight:600;cursor:pointer;">
+            <button type="button" onclick="hideUpdate()" style="background:#ccc;color:#222;padding:8px 18px;border:none;border-radius:6px;font-weight:600;cursor:pointer;">Cancel</button>
+        </form>
+    </div>
+</div>
+
+<script>
+function showUpdate(idx, name, initial_quantity, current_quantity, cost, retail_price, discount, last_date_sell, date_purchase) {
+    document.getElementById('updateFormDiv').style.display = 'block';
+    document.getElementById('updateIdx').value = idx;
+    document.getElementById('updateName').value = name;
+    document.getElementById('updateInitialQuantity').value = initial_quantity;
+    document.getElementById('updateCurrentQuantity').value = current_quantity;
+    document.getElementById('updateCost').value = cost;
+    document.getElementById('updateRetailPrice').value = retail_price;
+    document.getElementById('updateDiscount').value = discount;
+    document.getElementById('updateLastDateSell').value = last_date_sell;
+    document.getElementById('updateDatePurchase').value = date_purchase;
+    window.scrollTo({top: document.getElementById('updateFormDiv').offsetTop - 60, behavior: 'smooth'});
+}
+function hideUpdate() {
+    document.getElementById('updateFormDiv').style.display = 'none';
+}
+</script>
+{% endblock %}

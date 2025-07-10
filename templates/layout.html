@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Anyada Salon</title>
+    <link href="https://fonts.googleapis.com/css?family=Montserrat:700,400&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Montserrat', Arial, sans-serif;
+            background: #f7f7fa;
+            margin: 0;
+            padding: 0;
+            color: #222;
+        }
+        header {
+            background: #fff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            padding: 32px 0 16px 0;
+            text-align: center;
+        }
+        header h1 {
+            margin: 0 0 8px 0;
+            font-size: 2.5rem;
+            letter-spacing: 2px;
+            color: #5a189a;
+        }
+        header img {
+            border-radius: 16px;
+            margin-bottom: 8px;
+            box-shadow: 0 2px 12px rgba(90,24,154,0.08);
+            max-width: 180px;
+            height: auto;
+        }
+        nav {
+            margin: 24px 0 0 0;
+            text-align: center;
+        }
+        nav a {
+            display: inline-block;
+            margin: 0 18px;
+            padding: 8px 18px;
+            text-decoration: none;
+            color: #5a189a;
+            font-weight: 600;
+            border-radius: 6px;
+            transition: background 0.2s, color 0.2s;
+        }
+        nav a:hover, nav a:focus {
+            background: #e0aaff;
+            color: #fff;
+        }
+        hr {
+            border: none;
+            border-top: 1px solid #e0e0e0;
+            margin: 32px 0 0 0;
+        }
+        main {
+            max-width: 700px;
+            margin: 40px auto 0 auto;
+            background: #fff;
+            border-radius: 18px;
+            box-shadow: 0 4px 32px rgba(90,24,154,0.07);
+            padding: 36px 40px;
+        }
+        @media (max-width: 800px) {
+            main {
+                padding: 18px 8px;
+            }
+            header h1 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <img src="{{ url_for('static', filename='1000028906.jpg') }}" alt="Anyada Salon">
+        <h1>Anyada Salon</h1>
+        <nav>
+            <a href="{{ url_for('analyst') }}">Analyst</a>
+            <a href="{{ url_for('job') }}">Job</a>
+            <a href="{{ url_for('inventory') }}">Inventory</a>
+            <a href="{{ url_for('customers') }}">Customers</a>
+            <a href="{{ url_for('services') }}">Services</a>
+        </nav>
+    </header>
+    <hr>
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>
