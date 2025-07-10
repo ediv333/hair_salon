@@ -273,9 +273,9 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('date').valueAsDate = new Date();
     }
 
-    // Load customers from API route instead of direct file access
+    // Load customers from API route with cache busting to ensure fresh data
     if (document.getElementById('customer')) {
-        fetch('/api/customers')
+        fetch('/api/customers?_=' + new Date().getTime())
             .then(r => r.json())
             .then(data => {
                 customers = data;
@@ -336,11 +336,11 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         
-        fetch('/api/services')
+        fetch('/api/services?_=' + new Date().getTime())
             .then(r => r.json())
             .then(data => {
                 services = data;
-                fetch('/api/inventory')
+                fetch('/api/inventory?_=' + new Date().getTime())
                     .then(r => r.json())
                     .then(invData => {
                         inventory = invData;
