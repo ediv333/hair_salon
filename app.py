@@ -23,26 +23,53 @@ app = Flask(__name__)
 @app.route('/api/customers')
 def api_customers():
     customers_path = get_data_file_path('customers.json')
+    print(f"Loading customers from: {customers_path}")
     if os.path.exists(customers_path):
-        with open(customers_path, 'r') as f:
-            return json.load(f)
-    return []
+        try:
+            with open(customers_path, 'r') as f:
+                customers_data = json.load(f)
+                print(f"Loaded {len(customers_data)} customers: {[c.get('name', 'Unknown') for c in customers_data]}")
+                return customers_data
+        except Exception as e:
+            print(f"Error loading customers: {e}")
+            return []
+    else:
+        print(f"No customers file found at {customers_path}")
+        return []
 
 @app.route('/api/services')
 def api_services():
     services_path = get_data_file_path('services.json')
+    print(f"Loading services from: {services_path}")
     if os.path.exists(services_path):
-        with open(services_path, 'r') as f:
-            return json.load(f)
-    return []
+        try:
+            with open(services_path, 'r') as f:
+                services_data = json.load(f)
+                print(f"Loaded {len(services_data)} services")
+                return services_data
+        except Exception as e:
+            print(f"Error loading services: {e}")
+            return []
+    else:
+        print(f"No services file found at {services_path}")
+        return []
 
 @app.route('/api/inventory')
 def api_inventory():
     inventory_path = get_data_file_path('inventory.json')
+    print(f"Loading inventory from: {inventory_path}")
     if os.path.exists(inventory_path):
-        with open(inventory_path, 'r') as f:
-            return json.load(f)
-    return []
+        try:
+            with open(inventory_path, 'r') as f:
+                inventory_data = json.load(f)
+                print(f"Loaded {len(inventory_data)} inventory items")
+                return inventory_data
+        except Exception as e:
+            print(f"Error loading inventory: {e}")
+            return []
+    else:
+        print(f"No inventory file found at {inventory_path}")
+        return []
 
 @app.route('/')
 def analyst():
