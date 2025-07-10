@@ -1,0 +1,396 @@
+{% extends "layout.html" %}
+
+{% block title %}Price Simulator{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <!-- Header with Last Updated -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">
+            <i class="fas fa-calculator text-primary me-2"></i> Pricing Simulator
+        </h1>
+        <span class="text-muted small">
+            <i class="fas fa-clock me-1"></i> Last updated: {{ last_updated }}
+        </span>
+    </div>
+
+    <!-- Simulator Explanation Card -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-primary bg-opacity-10">
+            <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i> How It Works</h5>
+        </div>
+        <div class="card-body">
+            <p>This simulator helps you analyze how price changes might affect your profits. Based on your historical sales data, we calculate:</p>
+            <ul>
+                <li>Current profit margins for each item/service</li>
+                <li>Potential profit increases with 5%, 10%, and 15% price increases</li>
+                <li>Items are sorted by potential profit improvement (highest first)</li>
+            </ul>
+            <div class="alert alert-info">
+                <i class="fas fa-lightbulb me-2"></i> <strong>Tip:</strong> Consider adjusting prices for items with high sales volume and low profit margins for maximum impact.
+            </div>
+        </div>
+    </div>
+
+    {% if items_data %}
+    <!-- Summary Statistics -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-success bg-opacity-10">
+            <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i> Profit Improvement Summary</h5>
+        </div>
+        <div class="card-body">
+            <div class="row text-center">
+                {% set total_profit = {'current': 0, 'five': 0, 'ten': 0, 'fifteen': 0} %}
+                {% for item in items_data %}
+                    {% set profit_value = item.profit|replace('฿', '')|replace(',', '')|float %}
+                    {% set profit_5pct = item.profit_5pct|replace('฿', '')|replace(',', '')|float %}
+                    {% set profit_10pct = item.profit_10pct|replace('฿', '')|replace(',', '')|float %}
+                    {% set profit_15pct = item.profit_15pct|replace('฿', '')|replace(',', '')|float %}
+                    
+                    {% if total_profit.update({'current': total_profit.current + profit_value}) %}{% endif %}
+                    {% if total_profit.update({'five': total_profit.five + profit_5pct}) %}{% endif %}
+                    {% if total_profit.update({'ten': total_profit.ten + profit_10pct}) %}{% endif %}
+                    {% if total_profit.update({'fifteen': total_profit.fifteen + profit_15pct}) %}{% endif %}
+                {% endfor %}
+
+                <div class="col-md-3 mb-3">
+                    <div class="card border-0 bg-light h-100">
+                        <div class="card-body">
+                            <h3 class="display-6 mb-0">
+                                {% if total_profit.current < 0 %}
+                                -฿{{ '{:,.0f}'.format(total_profit.current|abs) }}
+                                {% else %}
+                                ฿{{ '{:,.0f}'.format(total_profit.current) }}
+                                {% endif %}
+                            </h3>
+                            <p class="text-muted">Current Profit</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-3 mb-3">
+                    <div class="card border-0 bg-light h-100">
+                        <div class="card-body">
+                            <h3 class="text-primary display-6 mb-0">
+                                {% if total_profit.five < 0 %}
+                                -฿{{ '{:,.0f}'.format(total_profit.five|abs) }}
+                                {% else %}
+                                ฿{{ '{:,.0f}'.format(total_profit.five) }}
+                                {% endif %}
+                            </h3>
+                            <p class="text-muted">With 5% Increase</p>
+                            <div class="badge {% if total_profit.five - total_profit.current >= 0 %}bg-success{% else %}bg-danger{% endif %}">
+                                {% if total_profit.five - total_profit.current >= 0 %}
+                                +{{ '{:,.0f}'.format(total_profit.five - total_profit.current) }}
+                                {% else %}
+                                {{ '{:,.0f}'.format(total_profit.five - total_profit.current) }}
+                                {% endif %}
+                                ({{ '{:.1f}%'.format((total_profit.five - total_profit.current) / total_profit.current * 100) }})
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-3 mb-3">
+                    <div class="card border-0 bg-light h-100">
+                        <div class="card-body">
+                            <h3 class="text-primary display-6 mb-0">
+                                {% if total_profit.ten < 0 %}
+                                -฿{{ '{:,.0f}'.format(total_profit.ten|abs) }}
+                                {% else %}
+                                ฿{{ '{:,.0f}'.format(total_profit.ten) }}
+                                {% endif %}
+                            </h3>
+                            <p class="text-muted">With 10% Increase</p>
+                            <div class="badge {% if total_profit.ten - total_profit.current >= 0 %}bg-success{% else %}bg-danger{% endif %}">
+                                {% if total_profit.ten - total_profit.current >= 0 %}
+                                +{{ '{:,.0f}'.format(total_profit.ten - total_profit.current) }}
+                                {% else %}
+                                {{ '{:,.0f}'.format(total_profit.ten - total_profit.current) }}
+                                {% endif %}
+                                ({{ '{:.1f}%'.format((total_profit.ten - total_profit.current) / total_profit.current * 100) }})
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-3 mb-3">
+                    <div class="card border-0 bg-light h-100">
+                        <div class="card-body">
+                            <h3 class="text-primary display-6 mb-0">
+                                {% if total_profit.fifteen < 0 %}
+                                -฿{{ '{:,.0f}'.format(total_profit.fifteen|abs) }}
+                                {% else %}
+                                ฿{{ '{:,.0f}'.format(total_profit.fifteen) }}
+                                {% endif %}
+                            </h3>
+                            <p class="text-muted">With 15% Increase</p>
+                            <div class="badge {% if total_profit.fifteen - total_profit.current >= 0 %}bg-success{% else %}bg-danger{% endif %}">
+                                {% if total_profit.fifteen - total_profit.current >= 0 %}
+                                +{{ '{:,.0f}'.format(total_profit.fifteen - total_profit.current) }}
+                                {% else %}
+                                {{ '{:,.0f}'.format(total_profit.fifteen - total_profit.current) }}
+                                {% endif %}
+                                ({{ '{:.1f}%'.format((total_profit.fifteen - total_profit.current) / total_profit.current * 100) }})
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Items Data Table -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+            <h5 class="mb-0"><i class="fas fa-table me-2"></i> Item Price Analysis</h5>
+            <div>
+                <button class="btn btn-sm btn-outline-primary" type="button" id="toggleColumns">
+                    <i class="fas fa-columns me-1"></i> Toggle Details
+                </button>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Item</th>
+                            <th>Current Price</th>
+                            <th>Cost</th>
+                            <th>Quantity Sold</th>
+                            <th>Current Profit</th>
+                            <th>Profit Margin</th>
+                            <th class="detail-col">5% Price Increase</th>
+                            <th>Profit (5%)</th>
+                            <th class="detail-col">10% Price Increase</th>
+                            <th>Profit (10%)</th>
+                            <th class="detail-col">15% Price Increase</th>
+                            <th>Profit (15%)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in items_data %}
+                        <tr>
+                            <td>{{ item.item }}</td>
+                            <td>{{ item.price }}</td>
+                            <td>{{ item.cost }}</td>
+                            <td>{{ item.quantity }}</td>
+                            <td>{{ item.profit }}</td>
+                            <td>{{ item.profit_margin }}%</td>
+                            <td class="detail-col">{{ item.price_5pct }}</td>
+                            <td><span class="badge rounded-pill bg-success">{{ item.profit_5pct }}</span></td>
+                            <td class="detail-col">{{ item.price_10pct }}</td>
+                            <td><span class="badge rounded-pill bg-success">{{ item.profit_10pct }}</span></td>
+                            <td class="detail-col">{{ item.price_15pct }}</td>
+                            <td><span class="badge rounded-pill bg-success">{{ item.profit_15pct }}</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recommendations -->
+    <div class="card mt-4 shadow-sm">
+        <div class="card-header bg-info bg-opacity-10">
+            <h5 class="mb-0"><i class="fas fa-lightbulb me-2"></i> Price Optimization Recommendations</h5>
+        </div>
+        <div class="card-body">
+            {% set top_items = items_data[:3] %}
+            <p>Based on your data, consider these price adjustments for maximum profit improvement:</p>
+            
+            <ol>
+                {% for item in top_items %}
+                <li class="mb-3">
+                    <strong>{{ item.item }}</strong>: Increase from {{ item.price }} to {{ item.price_10pct }} 
+                    <span class="badge bg-success ms-2">+{{ item.profit_increase_10pct|replace('฿', '')|float|round|int }} profit</span>
+                    <div class="small text-muted">Current profit margin: {{ item.profit_margin }}% | Quantity sold: {{ item.quantity }}</div>
+                </li>
+                {% endfor %}
+            </ol>
+            
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle me-2"></i> <strong>Note:</strong> These recommendations assume that sales volume remains the same after price changes. Consider market factors and competition when adjusting prices.
+            </div>
+        </div>
+    </div>
+    
+    <!-- Promotion Suggestions -->
+    <div class="card mt-4 shadow-sm mb-4">
+        <div class="card-header bg-success bg-opacity-10">
+            <h5 class="mb-0"><i class="fas fa-bullhorn me-2"></i> Promotion Suggestions</h5>
+        </div>
+        <div class="card-body">
+            <p>Here are strategic promotions to help increase sales and profits based on your data:</p>
+            
+            <div class="row">
+                <!-- Service + Product Bundles -->
+                <div class="col-md-4 mb-3">
+                    <div class="card h-100 border-primary border-opacity-25">
+                        <div class="card-header bg-primary bg-opacity-10">
+                            <h6 class="mb-0"><i class="fas fa-box me-2"></i> Service + Product Bundles</h6>
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text">Create strategic bundles that pair services with related retail products at a special combined price.</p>
+                            
+                            <div class="mt-3">
+                                <h6 class="fw-bold">Suggested Service + Product Combos:</h6>
+                                {% if items_data|length > 2 %}
+                                <ul class="mb-2">
+                                    <li><strong>"Complete Care Package"</strong>: Hair coloring service + color protection shampoo (10% off bundle)</li>
+                                    <li><strong>"Style & Maintain"</strong>: Haircut + styling product of choice (15% off product)</li>
+                                    <li><strong>"Treatment Booster"</strong>: Hair treatment + take-home conditioning mask (20% off mask)</li>
+                                </ul>
+                                <div class="text-success"><i class="fas fa-arrow-trend-up me-1"></i> Increases product sales by 40-60% and boosts service value</div>
+                                {% else %}
+                                <p class="text-muted">Add more services and products to get personalized bundle suggestions.</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Loyalty Program -->
+                <div class="col-md-4 mb-3">
+                    <div class="card h-100 border-info border-opacity-25">
+                        <div class="card-header bg-info bg-opacity-10">
+                            <h6 class="mb-0"><i class="fas fa-award me-2"></i> Loyalty Program</h6>
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text">Implement a points system for repeat customers to increase retention and frequency.</p>
+                            
+                            <div class="mt-3">
+                                <h6 class="fw-bold">Implementation Ideas:</h6>
+                                <ul class="mb-2">
+                                    <li>5 points per visit, 50 points = free add-on service</li>
+                                    <li>Tiered benefits: Silver, Gold, Platinum status</li>
+                                    <li>Birthday special: Double points during birthday month</li>
+                                </ul>
+                                <div class="text-success"><i class="fas fa-repeat me-1"></i> Expected retention increase: 30%</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Limited-Time Offers -->
+                <div class="col-md-4 mb-3">
+                    <div class="card h-100 border-warning border-opacity-25">
+                        <div class="card-header bg-warning bg-opacity-10">
+                            <h6 class="mb-0"><i class="fas fa-clock me-2"></i> Limited-Time Offers</h6>
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text">Create urgency with special promotions during slower periods to balance workload.</p>
+                            
+                            <div class="mt-3">
+                                <h6 class="fw-bold">Strategic Timings:</h6>
+                                <ul class="mb-2">
+                                    <li>Weekday morning discounts (10% off before noon)</li>
+                                    <li>Monthly themed promotions (seasonal services)</li>
+                                    <li>"Flash sale" on selected products (24hr only)</li>
+                                </ul>
+                                <div class="text-success"><i class="fas fa-calendar-check me-1"></i> Expected booking increase: 20-40% during slow periods</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Advanced Marketing Strategies -->
+            <div class="accordion mt-3" id="marketingStrategies">
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingAdvanced">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAdvanced" aria-expanded="false" aria-controls="collapseAdvanced">
+                            <i class="fas fa-rocket me-2"></i> Advanced Marketing Strategies
+                        </button>
+                    </h2>
+                    <div id="collapseAdvanced" class="accordion-collapse collapse" aria-labelledby="headingAdvanced" data-bs-parent="#marketingStrategies">
+                        <div class="accordion-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6 class="fw-bold">Service-Product Pairing Strategy</h6>
+                                    <p>Systematically combine services with take-home products for continued results:</p>
+                                    <table class="table table-sm table-bordered">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Service</th>
+                                                <th>Paired Product</th>
+                                                <th>Offer</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>Hair coloring</td>
+                                                <td>Color-protecting shampoo</td>
+                                                <td>20% off product</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Hair treatment</td>
+                                                <td>Home care kit</td>
+                                                <td>10% off bundle</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Styling service</td>
+                                                <td>Styling tools/products</td>
+                                                <td>Free mini size</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                    <div class="text-success mb-3"><i class="fas fa-chart-line me-1"></i> Potential revenue increase: 25-40% per transaction</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6 class="fw-bold">Social Media Campaign</h6>
+                                    <p>Showcase "before & after" results featuring your highest-margin services:</p>
+                                    <ul>
+                                        <li>Create Instagram/Facebook photo series</li>
+                                        <li>Client testimonial videos</li>
+                                        <li>Referral incentives for social sharing</li>
+                                    </ul>
+                                    <div class="text-success"><i class="fas fa-users me-1"></i> Expected new client acquisition: +15%</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="alert alert-info mt-4 mb-0">
+                <i class="fas fa-chart-pie me-2"></i> <strong>Data-Driven Tip:</strong> Focus promotions on your high-margin services/products that have room for volume growth. Monitor results and adjust your strategy every 4-6 weeks based on performance data.
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <!-- No Data Available -->
+    <div class="card shadow-sm">
+        <div class="card-body text-center py-5">
+            <i class="fas fa-chart-line text-muted mb-3" style="font-size: 3rem;"></i>
+            <h4>No Data Available</h4>
+            <p class="text-muted mb-4">Add some jobs with price and cost information to see pricing simulations here.</p>
+            <a href="{{ url_for('job') }}" class="btn btn-primary">
+                <i class="fas fa-plus-circle me-2"></i> Add Jobs
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- JavaScript for page functionality -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const toggleColumnsBtn = document.getElementById('toggleColumns');
+        const detailCols = document.querySelectorAll('.detail-col');
+        
+        // Toggle visibility of detail columns
+        toggleColumnsBtn.addEventListener('click', function() {
+            detailCols.forEach(col => {
+                if (col.style.display === 'none') {
+                    col.style.display = '';
+                } else {
+                    col.style.display = 'none';
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

@@ -1,33 +1,209 @@
 {% extends 'layout.html' %}
 {% block content %}
-<h2 style="color:#5a189a; margin-bottom:24px;">📅 Add Job</h2>
-{% if disable_form %}
-<div style="color: #e63946; font-weight: bold; margin-bottom: 24px;">
-    Cannot add jobs: services or inventory data is missing.
+<div class="row">
+    <div class="col-lg-8 col-md-10 mx-auto">
+        <h2 class="mb-4 text-primary">
+            <i class="fas fa-calendar-plus me-2"></i> Add Job
+        </h2>
+        
+        {% if disable_form %}
+        <div class="alert alert-danger" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i> Cannot add jobs: services or inventory data is missing.
+        </div>
+        {% else %}
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body p-4">
+                <form method="POST" id="jobForm" class="needs-validation" novalidate>
+                    <div class="row g-3">
+                        <!-- Date Picker with Calendar Icon -->
+                        <div class="col-md-6 mb-3">
+                            <label for="date" class="form-label">Date <i class="text-danger">*</i></label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-calendar"></i></span>
+                                <input type="date" class="form-control" name="date" id="date" required>
+                                <div class="invalid-feedback">Please select a date.</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Customer Selector -->
+                        <div class="col-md-6 mb-3">
+                            <label for="customer" class="form-label">Customer <i class="text-danger">*</i></label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-user"></i></span>
+                                <select class="form-select" name="customer" id="customer" required>
+                                    <option value="" disabled selected>Select customer</option>
+                                </select>
+                                <button type="button" class="btn btn-outline-secondary" id="refreshCustomers" title="Refresh customer list">
+                                    <i class="fas fa-sync-alt"></i>
+                                </button>
+                                <div class="invalid-feedback">Please select a customer.</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Service/Item Selector with Category Filter -->
+                        <div class="col-12 mb-3">
+                            <label for="itemCategory" class="form-label">Item Category</label>
+                            <div class="input-group mb-2">
+                                <span class="input-group-text"><i class="fas fa-filter"></i></span>
+                                <select class="form-select" id="itemCategory">
+                                    <option value="all" selected>All Items</option>
+                                    <option value="service">Services Only</option>
+                                    <option value="product">Products Only</option>
+                                </select>
+                            </div>
+                            <label for="item" class="form-label">Item/Service <i class="text-danger">*</i></label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-cut"></i></span>
+                                <select class="form-select" name="item" id="item" required>
+                                    <option value="" disabled selected>Select item</option>
+                                </select>
+                                <div class="invalid-feedback">Please select an item.</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Cost Field (Hidden from user but submitted with form) -->
+                        <div class="d-none">
+                            <input type="hidden" name="cost" id="cost" value="0">
+                        </div>
+
+                        <div class="row mb-3">
+                            <!-- Quantity with Range Slider -->
+                            <div class="col-md-6">
+                                <label for="quantity" class="form-label">Quantity <span id="quantityValue">1</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-hashtag"></i></span>
+                                    <input type="number" class="form-control" name="quantity" id="quantity" min="1" value="1" required>
+                                </div>
+                            </div>
+                            
+                            <!-- Price with Cost Comparison -->
+                            <div class="col-md-6">
+                            <label for="price" class="form-label">Price <i class="text-danger">*</i> <span id="costInfo" class="small text-muted"></span></label>
+                            <div class="input-group">
+                                <span class="input-group-text">฿</span>
+                                <input type="number" class="form-control" name="price" id="price" step="0.01" required>
+                                <div class="invalid-feedback">Please enter a valid price.</div>
+                            </div>
+                            <div id="profitMargin" class="progress mt-2" style="height: 5px; display: none;">
+                                <div class="progress-bar" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                            <small id="profitInfo" class="form-text"></small>
+                            </div>
+                        </div>
+                        
+                        <!-- Submit Button -->
+                        <div class="col-12 mt-3">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-plus-circle me-2"></i> Add Job
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Job History Section -->
+    <div class="mt-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="mb-0 text-primary">
+                <i class="fas fa-history me-2"></i> Job History
+            </h2>
+            
+            <!-- Search Form -->
+            <form method="get" class="d-flex">
+                <div class="input-group">
+                    <input type="text" class="form-control" name="search_customer" placeholder="Search by customer name" 
+                           value="{{ search_customer }}" aria-label="Search by customer name">
+                    <button class="btn btn-primary" type="submit">
+                        <i class="fas fa-search"></i>
+                    </button>
+                    {% if search_customer %}
+                    <a href="{{ url_for('job') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-times"></i> Clear
+                    </a>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+        
+        {% if jobs %}
+        <style>
+            .job-history-table {
+                max-height: 400px;
+                overflow-y: auto;
+            }
+            
+            /* Make table header sticky when scrolling */
+            .job-history-table thead th {
+                position: sticky;
+                top: 0;
+                background-color: #f8f9fa; /* Light background to match Bootstrap's .table-light */
+                z-index: 1;
+                border-bottom: 1px solid #dee2e6;
+            }
+        </style>
+        <div class="table-responsive job-history-table">
+            <table class="table table-hover table-striped">
+                <thead class="table-light">
+                    <tr>
+                        <th>Date</th>
+                        <th>Customer</th>
+                        <th>Item</th>
+                        <th>Category</th>
+                        <th>Quantity</th>
+                        <th class="text-end">Price</th>
+                        <th class="text-end">Total</th>
+                        <th class="text-end">Cost</th>
+                        <th class="text-end">Profit</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for job in jobs %}
+                    <tr>
+                        <td>{{ job.date }}</td>
+                        <td>{{ job.customer }}</td>
+                        <td>{{ job.item }}</td>
+                        <td>
+                            {% if job.category == 'service' %}
+                            <span class="badge bg-primary">Service</span>
+                            {% elif job.category == 'product' %}
+                            <span class="badge bg-info">Product</span>
+                            {% else %}
+                            <span class="badge bg-secondary">Unknown</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">{{ job.quantity|int }}</td>
+                        <td class="text-end">฿{{ '%.2f'|format(job.price|float) }}</td>
+                        <td class="text-end">฿{{ '%.2f'|format(job.price|float * job.quantity|int) }}</td>
+                        <td class="text-end">฿{{ '%.2f'|format(job.cost|float) }}</td>
+                        <td class="text-end
+                            {% set item_profit = job.price|float * job.quantity|int - job.cost|float %}
+                            {% if item_profit > 0 %}
+                                text-success
+                            {% else %}
+                                text-danger
+                            {% endif %}
+                        ">
+                            ฿{{ '%.2f'|format(item_profit) }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% elif search_customer %}
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i> No jobs found for customer "{{ search_customer }}". <a href="{{ url_for('job') }}">Clear search</a>
+        </div>
+        {% else %}
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i> No job records found. Add your first job using the form above.
+        </div>
+        {% endif %}
+    </div>
 </div>
-{% else %}
-<form method="POST" id="jobForm" style="max-width:500px;margin:auto;display:flex;flex-direction:column;gap:18px;">
-    <label>Date:
-        <input type="date" name="date" id="date" required style="width:100%;padding:8px;border-radius:6px;border:1px solid #ccc;">
-    </label>
-    <label>Customer:
-        <select name="customer" id="customer" required style="width:100%;padding:8px;border-radius:6px;border:1px solid #ccc;">
-            <option value="" disabled selected>Select customer</option>
-        </select>
-    </label>
-    <label>Item:
-        <select name="item" id="item" required style="width:100%;padding:8px;border-radius:6px;border:1px solid #ccc;">
-            <option value="" disabled selected>Select item</option>
-        </select>
-    </label>
-    <label>Quantity:
-        <input type="number" name="quantity" id="quantity" min="1" value="1" required style="width:100%;padding:8px;border-radius:6px;border:1px solid #ccc;">
-    </label>
-    <label>Price:
-        <input type="number" name="price" id="price" step="0.01" required style="width:100%;padding:8px;border-radius:6px;border:1px solid #ccc;">
-    </label>
-    <input type="submit" value="Add Job" style="background:#5a189a;color:#fff;padding:10px 0;border:none;border-radius:6px;font-weight:600;cursor:pointer;">
-</form>
 <script>
 let customers = [];
 let services = [];
@@ -35,14 +211,71 @@ let inventory = [];
 let costMap = {};
 let priceMap = {};
 
+// Function to update profit margin visualization
+function updateProfitMargin(price, cost) {
+    const profitMargin = document.getElementById('profitMargin');
+    const profitInfo = document.getElementById('profitInfo');
+    
+    if (!profitMargin || !profitInfo) return;
+    
+    const quantity = parseInt(document.getElementById('quantity').value) || 1;
+    const totalCost = cost * quantity;
+    const totalPrice = price * quantity;
+    document.getElementById('cost').value = totalCost;
+    
+    if (price && cost) {
+        const profit = totalPrice - totalCost;
+        const profitPercent = (profit / totalCost) * 100;
+        
+        // Update progress bar
+        profitMargin.style.display = 'block';
+        const progressBar = profitMargin.querySelector('.progress-bar');
+        
+        if (profit <= 0) {
+            progressBar.style.width = '0%';
+            progressBar.classList.remove('bg-success', 'bg-warning');
+            progressBar.classList.add('bg-danger');
+            profitInfo.innerHTML = `<span class="text-danger">Loss: ฿${Math.abs(profit).toFixed(2)} (${Math.abs(profitPercent).toFixed(0)}%)</span>`;
+        } else {
+            let percentage = Math.min(profitPercent, 100);
+            progressBar.style.width = `${percentage}%`;
+            
+            if (profitPercent < 20) {
+                progressBar.classList.remove('bg-success', 'bg-danger');
+                progressBar.classList.add('bg-warning');
+            } else {
+                progressBar.classList.remove('bg-warning', 'bg-danger');
+                progressBar.classList.add('bg-success');
+            }
+            
+            profitInfo.innerHTML = `<span class="text-success">Profit: ฿${profit.toFixed(2)} (${profitPercent.toFixed(0)}%)</span>`;
+        }
+    } else {
+        profitMargin.style.display = 'none';
+        profitInfo.textContent = '';
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
+    // Initialize form validation
+    const forms = document.querySelectorAll('.needs-validation');
+    Array.from(forms).forEach(form => {
+        form.addEventListener('submit', event => {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            form.classList.add('was-validated');
+        }, false);
+    });
+    
     if (document.getElementById('date')) {
         document.getElementById('date').valueAsDate = new Date();
     }
 
     // Load customers from customers.json for dropdown
     if (document.getElementById('customer')) {
-        fetch('{{ url_for("static", filename="customers.json") }}')
+        fetch('/data/customers.json')
             .then(r => r.json())
             .then(data => {
                 customers = data;
@@ -58,56 +291,110 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     }
 
-    if (document.getElementById('item')) {
-        fetch('{{ url_for("static", filename="services.json") }}')
+    // Initialize item category filtering and loading items
+    if (document.getElementById('item') && document.getElementById('itemCategory')) {
+        // Function to populate the item dropdown based on selected category
+        function populateItemDropdown(category) {
+            let itemSel = document.getElementById('item');
+            // Clear current options except the first one
+            while (itemSel.options.length > 1) {
+                itemSel.remove(1);
+            }
+            
+            let itemSet = new Set();
+            
+            // Add services if category is 'all' or 'service'
+            if (category === 'all' || category === 'service') {
+                services.forEach(s => {
+                    if (!itemSet.has(s.name)) {
+                        let opt = document.createElement('option');
+                        opt.value = s.name;
+                        opt.textContent = s.name;
+                        opt.dataset.type = 'service';
+                        itemSel.appendChild(opt);
+                        costMap[s.name] = s.cost;
+                        priceMap[s.name] = s.price;
+                        itemSet.add(s.name);
+                    }
+                });
+            }
+            
+            // Add inventory products if category is 'all' or 'product'
+            if (category === 'all' || category === 'product') {
+                inventory.forEach(i => {
+                    if (!itemSet.has(i.name)) {
+                        let opt = document.createElement('option');
+                        opt.value = i.name;
+                        opt.textContent = i.name;
+                        opt.dataset.type = 'product';
+                        itemSel.appendChild(opt);
+                        costMap[i.name] = i.cost;
+                        priceMap[i.name] = i.retail_price;
+                        itemSet.add(i.name);
+                    }
+                });
+            }
+        }
+        
+        fetch('/data/services.json')
             .then(r => r.json())
             .then(data => {
                 services = data;
-                fetch('{{ url_for("static", filename="inventory.json") }}')
+                fetch('/data/inventory.json')
                     .then(r => r.json())
                     .then(invData => {
                         inventory = invData;
-                        let itemSel = document.getElementById('item');
-                        let itemSet = new Set();
-                        services.forEach(s => {
-                            if (!itemSet.has(s.name)) {
-                                let opt = document.createElement('option');
-                                opt.value = s.name;
-                                opt.textContent = s.name;
-                                itemSel.appendChild(opt);
-                                costMap[s.name] = s.cost;
-                                priceMap[s.name] = s.price;
-                                itemSet.add(s.name);
-                            }
-                        });
-                        inventory.forEach(i => {
-                            if (!itemSet.has(i.name)) {
-                                let opt = document.createElement('option');
-                                opt.value = i.name;
-                                opt.textContent = i.name;
-                                itemSel.appendChild(opt);
-                                costMap[i.name] = i.cost;
-                                priceMap[i.name] = i.retail_price;
-                                itemSet.add(i.name);
-                            }
+                        populateItemDropdown('all'); // Initially populate with all items
+                        
+                        // Add event listener for category filter
+                        document.getElementById('itemCategory').addEventListener('change', function() {
+                            populateItemDropdown(this.value);
                         });
                     });
             });
 
         document.getElementById('item').addEventListener('change', function() {
             let iname = this.value;
-            document.getElementById('price').value = priceMap[iname] !== undefined ? priceMap[iname] : '';
+            // Set price and cost fields
+            const price = priceMap[iname] !== undefined ? priceMap[iname] : '';
+            const cost = costMap[iname] !== undefined ? costMap[iname] : 0;
+            
+            document.getElementById('price').value = price;
+            document.getElementById('cost').value = cost;
+            
+            // Show cost info
+            const costInfoSpan = document.getElementById('costInfo');
+            if(costInfoSpan) {
+                costInfoSpan.textContent = cost ? `(Cost: ฿${cost})` : '';
+            }
+            
+            // Update quantity handler to recalculate costs
+            updateProfitMargin(price, cost);
         });
     }
 
+    // Add handler for quantity changes
+    if (document.getElementById('quantity')) {
+        document.getElementById('quantity').addEventListener('input', function() {
+            let iname = document.getElementById('item').value;
+            let cost = costMap[iname] !== undefined ? parseFloat(costMap[iname]) : 0;
+            let price = parseFloat(document.getElementById('price').value) || 0;
+            updateProfitMargin(price, cost);
+        });
+    }
+    
+    // Add handler for price changes
     if (document.getElementById('price')) {
         document.getElementById('price').addEventListener('input', function() {
             let iname = document.getElementById('item').value;
             let cost = costMap[iname] !== undefined ? parseFloat(costMap[iname]) : 0;
             let price = parseFloat(this.value);
+            
             if (!isNaN(price) && price <= cost) {
                 alert('Warning: Price is equal to or less than cost!');
             }
+            
+            updateProfitMargin(price, cost);
         });
     }
 
@@ -125,5 +412,4 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
-{% endif %}
 {% endblock %}

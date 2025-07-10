@@ -1,25 +1,251 @@
 {% extends 'layout.html' %}
 {% block content %}
-<h2 style="color:#5a189a; margin-bottom:24px;">📊 Profit Analysis</h2>
-
-<!-- Report Type Selector -->
-<form method="get" style="margin-bottom:24px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
-    <label>Report Type:</label>
-    <select name="report_type" style="padding:8px;border-radius:6px;border:1px solid #ccc;">
-        <option value="total_profit" {% if report_type == 'total_profit' %}selected{% endif %}>Total & Average Profit</option>
-        <option value="profit_per_item" {% if report_type == 'profit_per_item' %}selected{% endif %}>Profit Per Inventory Item</option>
-        <option value="profit_per_service" {% if report_type == 'profit_per_service' %}selected{% endif %}>Profit Per Service Type</option>
-    </select>
-    <button type="submit" style="background:#5a189a;color:#fff;padding:8px 18px;border:none;border-radius:6px;font-weight:600;cursor:pointer;">Generate Report</button>
-</form>
-
-{% if chart %}
-<div style="background:#f3f0ff;padding:24px;border-radius:12px;box-shadow:0 2px 8px rgba(90,24,154,0.04);">
-    {{ chart|safe }}
+<!-- Dashboard Header with modern styling -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="text-primary d-flex align-items-center mb-0">
+        <i class="fas fa-chart-pie me-2"></i> Analytics Dashboard
+    </h2>
+    <span class="text-muted small">
+        <i class="far fa-clock me-1"></i> Last updated: {{ last_updated|default('N/A') }}
+    </span>
 </div>
-{% else %}
-<div style="background:#f3f0ff;padding:24px;border-radius:12px;text-align:center;">
-    <p>No data available for analysis. Please add some jobs first.</p>
+
+<!-- Custom CSS for Analytics Page -->
+<style>
+    /* Card border styles */
+    .border-left-primary {
+        border-left: 4px solid #4e73df;
+    }
+    .border-left-success {
+        border-left: 4px solid #1cc88a;
+    }
+    .border-left-info {
+        border-left: 4px solid #36b9cc;
+    }
+    .border-left-danger {
+        border-left: 4px solid #e74a3b;
+    }
+    
+    /* Text styles */
+    .text-xs {
+        font-size: 0.7rem;
+    }
+    .text-gray-300 {
+        color: #dddfeb;
+    }
+    
+    /* Make sure chart container has proper size */
+    .chart-container {
+        min-height: 450px;
+    }
+    
+    /* Card customizations */
+    .card {
+        transition: transform 0.2s ease-in-out;
+    }
+    .card:hover {
+        transform: translateY(-5px);
+    }
+</style>
+
+<!-- Overview Cards Row -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary h-100 py-2 shadow-sm">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total Revenue</div>
+                        <div class="h3 mb-0 font-weight-bold">{{ total_revenue|default('฿0.00') }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-money-bill-wave fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-danger h-100 py-2 shadow-sm">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Total Cost</div>
+                        <div class="h3 mb-0 font-weight-bold">{{ total_cost|default('฿0.00') }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-tag fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success h-100 py-2 shadow-sm">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Net Profit</div>
+                        <div class="h3 mb-0 font-weight-bold">{{ net_profit|default('฿0.00') }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-chart-line fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Services vs Products section removed -->
 </div>
-{% endif %}
+
+<!-- Category Metrics Row removed -->
+
+<!-- Report Options -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-filter me-2"></i> Report Options</h5>
+                <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#reportOptions">
+                    <i class="fas fa-sliders-h"></i>
+                </button>
+            </div>
+            <div class="collapse show" id="reportOptions">
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-3">
+                            <label for="report_type" class="form-label small text-muted">Report Type</label>
+                            <select name="report_type" id="report_type" class="form-select">
+                                <option value="total_profit" {% if report_type == 'total_profit' %}selected{% endif %}>
+                                    Total & Average Profit
+                                </option>
+                                <option value="profit_per_item" {% if report_type == 'profit_per_item' %}selected{% endif %}>
+                                    Profit Per Inventory Item
+                                </option>
+                                <option value="profit_per_service" {% if report_type == 'profit_per_service' %}selected{% endif %}>
+                                    Profit Per Service Type
+                                </option>
+                                <option value="category_comparison" {% if report_type == 'category_comparison' %}selected{% endif %}>
+                                    Services vs Products
+                                </option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <label for="date_range" class="form-label small text-muted">Time Period</label>
+                            <select name="date_range" id="date_range" class="form-select">
+                                <option value="all" {% if date_range == 'all' or not date_range %}selected{% endif %}>All Time</option>
+                                <option value="month" {% if date_range == 'month' %}selected{% endif %}>This Month</option>
+                                <option value="quarter" {% if date_range == 'quarter' %}selected{% endif %}>This Quarter</option>
+                                <option value="year" {% if date_range == 'year' %}selected{% endif %}>This Year</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <label for="chart_type" class="form-label small text-muted">Chart Type</label>
+                            <select name="chart_type" id="chart_type" class="form-select">
+                                <option value="bar" {% if chart_type == 'bar' %}selected{% endif %}>Bar Chart</option>
+                                <option value="pie" {% if chart_type == 'pie' %}selected{% endif %}>Pie Chart</option>
+                                <option value="line" {% if chart_type == 'line' %}selected{% endif %}>Line Chart</option>
+                                <option value="table" {% if chart_type == 'table' %}selected{% endif %}>Data Table</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <label for="comparison" class="form-label small text-muted">Comparison</label>
+                            <select name="comparison" id="comparison" class="form-select">
+                                <option value="none" {% if comparison == 'none' or not comparison %}selected{% endif %}>No Comparison</option>
+                                <option value="prev_period" {% if comparison == 'prev_period' %}selected{% endif %}>Previous Period</option>
+                                <option value="prev_year" {% if comparison == 'prev_year' %}selected{% endif %}>Previous Year</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-12 text-end mt-3">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-sync-alt me-2"></i> Generate Report
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart Container Section -->
+<div class="row">
+    <div class="col-12">
+        {% if chart %}
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-light py-3 d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i> {{ report_title|default('Analysis Results') }}</h5>
+                    <span class="text-muted small">Based on {{ jobs|default([])|length }} job entries</span>
+                </div>
+                <div class="btn-group">
+                    <button type="button" class="btn btn-sm btn-outline-primary" id="downloadPNG">
+                        <i class="fas fa-download me-1"></i> PNG
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="downloadCSV">
+                        <i class="fas fa-file-csv me-1"></i> CSV
+                    </button>
+                </div>
+            </div>
+            <div class="card-body chart-container bg-white p-3" style="min-height: 450px;">
+                {{ chart|safe }}
+            </div>
+            <div class="card-footer bg-white py-2">
+                <div class="d-flex justify-content-between align-items-center small text-muted">
+                    <span><i class="fas fa-info-circle me-1"></i> Hover over chart elements for more details</span>
+                    <div>
+                        <span class="badge rounded-pill bg-light text-dark border me-1">{{ date_range|default('all')|title }}</span>
+                        <span class="badge rounded-pill bg-light text-dark border">{{ chart_type|default('bar')|title }} Chart</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="card shadow-sm border-0 text-center py-5 mb-4">
+            <div class="card-body">
+                <div class="py-4">
+                    <i class="fas fa-chart-area text-muted mb-4" style="font-size: 3.5rem;"></i>
+                    <h4 class="mb-3">No Analytics Data Available</h4>
+                    <p class="text-muted mb-4">Add jobs to generate insights and visualize your salon's performance.</p>
+                    <a href="{{ url_for('job') }}" class="btn btn-primary">
+                        <i class="fas fa-plus-circle me-2"></i> Add Jobs
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Insights Cards section removed -->
+
+<!-- Chart Interaction JavaScript -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Handle chart downloads if chart exists
+        const downloadPNGBtn = document.getElementById('downloadPNG');
+        const downloadCSVBtn = document.getElementById('downloadCSV');
+        
+        if (downloadPNGBtn) {
+            downloadPNGBtn.addEventListener('click', function() {
+                // This is a placeholder - actual implementation would depend on the charting library used
+                alert('PNG download functionality would be implemented here');
+            });
+        }
+        
+        if (downloadCSVBtn) {
+            downloadCSVBtn.addEventListener('click', function() {
+                // This is a placeholder - actual implementation would depend on the data available
+                alert('CSV download functionality would be implemented here');
+            });
+        }
+    });
+</script>
 {% endblock %}

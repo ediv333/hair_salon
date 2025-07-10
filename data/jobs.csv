@@ -1,5 +1,5 @@
-2025-07-09T13:18:53.013980,2025-07-09,edi,Shampoo Bla,2,200.0
-2025-07-09T13:19:33.146636,2025-07-09,anyada,Shampoo Bla-1,1,300.0
-2025-07-09T13:22:10.252681,2025-07-09,anyada,coloring long hair,1,300.0
-2025-07-09T13:22:16.931392,2025-07-09,edi,coloring short hair,1,200.0
-2025-07-09T13:45:58.757882,2025-07-09,edi,Shampoo Bla-2,3,350.0
+timestamp,date,customer,item,quantity,price,cost,category
+2025-07-09T13:19:33.146636,2025-07-09,anyada,Shampoo Bla-1,1,300.0,200.0,product
+2025-07-09T13:22:10.252681,2025-07-09,anyada,coloring long hair,1,300.0,200.0,service
+2025-07-09T13:22:16.931392,2025-07-09,edi,coloring short hair,1,200.0,100.0,service
+2025-07-09T13:45:58.757882,2025-07-09,edi,Shampoo Bla-2,3,350.0,600.0,product

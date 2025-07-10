@@ -1,10 +1,17 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, get_flashed_messages
+from flask import Flask, render_template, request, redirect, url_for, flash, get_flashed_messages, send_from_directory
 import pandas as pd
 import json
 import csv
 from datetime import datetime
 from utils.graph_utils import generate_profit_chart, generate_item_profit_chart, generate_service_profit_chart, generate_daily_revenue_chart
 import os
+import locale
+
+# Set locale for Thai Baht formatting
+try:
+    locale.setlocale(locale.LC_ALL, 'th_TH.UTF-8')
+except:
+    pass  # Fallback if locale is not supported
 
 app = Flask(__name__)
 
@@ -12,16 +19,271 @@ app = Flask(__name__)
 def analyst():
     chart = None
     report_type = request.args.get('report_type', 'total_profit')
+    chart_type = request.args.get('chart_type', 'pie')  # Changed default to pie
+    date_range = request.args.get('date_range', 'all')
+    comparison = request.args.get('comparison', 'none')
+    
+    # Default values for stats
+    total_revenue = 0
+    total_cost = 0
+    net_profit = 0
+    service_revenue = 0
+    product_revenue = 0
+    service_profit = 0
+    product_profit = 0
+    last_updated = datetime.now().strftime('%d %B %Y, %H:%M')
+    report_title = 'Sales Analysis'
     
     if os.path.exists('data/jobs.csv'):
-        if report_type == 'total_profit':
-            chart = generate_daily_revenue_chart()  # Change to daily_revenue_chart function
-        elif report_type == 'profit_per_item':
-            chart = generate_item_profit_chart()
-        elif report_type == 'profit_per_service':
-            chart = generate_service_profit_chart()
+        # Load jobs data
+        try:
+            # Debug print statement to check if the file exists
+            print(f"Jobs CSV exists: {os.path.exists('data/jobs.csv')}")
+            
+            # Try to load jobs.csv with different approaches
+            try:
+                # First attempt: Try with the full column set
+                jobs_df = pd.read_csv('data/jobs.csv', header=None, 
+                               names=['timestamp', 'date', 'customer', 'item', 'quantity', 'price', 'cost', 'category'])
+                print("Loaded with 8 columns")
+                
+            except Exception as e1:
+                print(f"Error loading with 8 columns: {e1}")
+                try:
+                    # Second attempt: Try with just cost
+                    jobs_df = pd.read_csv('data/jobs.csv', header=None, 
+                                   names=['timestamp', 'date', 'customer', 'item', 'quantity', 'price', 'cost'])
+                    print("Loaded with 7 columns")
+                    # Add category column
+                    jobs_df['category'] = 'unknown'
+                    
+                except Exception as e2:
+                    print(f"Error loading with 7 columns: {e2}")
+                    try:
+                        # Third attempt: Try original format
+                        jobs_df = pd.read_csv('data/jobs.csv', header=None, 
+                                      names=['timestamp', 'date', 'customer', 'item', 'quantity', 'price'])
+                        print("Loaded with 6 columns")
+                        # Add missing columns
+                        jobs_df['cost'] = 0.0
+                        jobs_df['category'] = 'unknown'
+                        
+                    except Exception as e3:
+                        print(f"Failed to load jobs.csv: {e3}")
+                        # Create empty dataframe with needed columns
+                        jobs_df = pd.DataFrame(columns=['timestamp', 'date', 'customer', 'item', 'quantity', 'price', 'cost', 'category'])
+            
+            # Convert columns to proper types
+            if not jobs_df.empty:
+                # Ensure numeric columns are properly typed
+                jobs_df['quantity'] = pd.to_numeric(jobs_df['quantity'], errors='coerce').fillna(0).astype(int)
+                jobs_df['price'] = pd.to_numeric(jobs_df['price'], errors='coerce').fillna(0)
+                jobs_df['cost'] = pd.to_numeric(jobs_df['cost'], errors='coerce').fillna(0)
+                # Add cost column based on item mappings
+                # Get services and inventory for cost mapping
+                services = []
+                inventory = []
+                if os.path.exists('data/services.json'):
+                    with open('data/services.json', 'r') as f:
+                        services = json.load(f)
+                if os.path.exists('data/inventory.json'):
+                    with open('data/inventory.json', 'r') as f:
+                        inventory = json.load(f)
+                
+                # Create cost mapping
+                cost_map = {}
+                for service in services:
+                    cost_map[service.get('name')] = float(service.get('cost', 0))
+                for item in inventory:
+                    cost_map[item.get('name')] = float(item.get('cost', 0))
+                
+                # Add costs
+                costs = []
+                for _, row in jobs_df.iterrows():
+                    item_name = row['item']
+                    quantity = row['quantity']
+                    cost = cost_map.get(item_name, 0) * quantity
+                    costs.append(cost)
+                
+                jobs_df['cost'] = costs
+            
+            # Calculate basic stats
+            if not jobs_df.empty:
+                # Calculate metrics with defensive checks
+                try:
+                    # Make sure price and quantity columns exist and are numeric
+                    if 'price' in jobs_df.columns and 'quantity' in jobs_df.columns:
+                        # Calculate revenue (price * quantity)
+                        jobs_df['revenue'] = jobs_df['price'] * jobs_df['quantity']
+                        
+                        # Calculate profit (revenue - cost)
+                        if 'cost' in jobs_df.columns:
+                            jobs_df['profit'] = jobs_df['revenue'] - jobs_df['cost']
+                        else:
+                            jobs_df['cost'] = 0
+                            jobs_df['profit'] = jobs_df['revenue']
+                        
+                        # Calculate summary metrics
+                        total_revenue = jobs_df['revenue'].sum()
+                        total_cost = jobs_df['cost'].sum() if 'cost' in jobs_df.columns else 0
+                        net_profit = total_revenue - total_cost
+                    else:
+                        print(f"Missing required columns. Available columns: {jobs_df.columns.tolist()}")
+                        total_revenue = total_cost = net_profit = 0
+                except Exception as calc_error:
+                    print(f"Error in calculation: {calc_error}")
+                    total_revenue = total_cost = net_profit = 0
+                
+                # Calculate category-specific metrics
+                # Default values
+                service_revenue = service_cost = service_profit = 0
+                product_revenue = product_cost = product_profit = 0
+                
+                # Check if we have the necessary columns for category analysis
+                if 'category' in jobs_df.columns and 'revenue' in jobs_df.columns:
+                    try:
+                        # Filter by service and product
+                        services_df = jobs_df[jobs_df['category'] == 'service']
+                        products_df = jobs_df[jobs_df['category'] == 'product']
+                        
+                        # Calculate service metrics
+                        if not services_df.empty and 'revenue' in services_df:
+                            service_revenue = services_df['revenue'].sum()
+                            service_cost = services_df['cost'].sum() if 'cost' in services_df else 0
+                            service_profit = service_revenue - service_cost
+                        
+                        # Calculate product metrics
+                        if not products_df.empty and 'revenue' in products_df:
+                            product_revenue = products_df['revenue'].sum()
+                            product_cost = products_df['cost'].sum() if 'cost' in products_df else 0
+                            product_profit = product_revenue - product_cost
+                    except Exception as cat_error:
+                        print(f"Error in category calculations: {cat_error}")
+                else:
+                    print("Missing category or revenue columns for category analysis")
+            
+            # Import all chart generation functions
+            from utils.graph_utils import (generate_daily_revenue_chart, generate_item_profit_chart, 
+                                          generate_service_profit_chart, generate_category_comparison_chart)
+            
+            # Generate charts with the requested chart_type
+            if report_type == 'total_profit':
+                chart = generate_daily_revenue_chart(chart_type=chart_type)
+                report_title = 'Daily Revenue Analysis'
+            elif report_type == 'profit_per_item':
+                chart = generate_item_profit_chart(chart_type=chart_type)
+                report_title = 'Profit Analysis - Inventory Products Only'
+            elif report_type == 'profit_per_service':
+                chart = generate_service_profit_chart(chart_type=chart_type)
+                report_title = 'Profit Per Service Type'
+            elif report_type == 'category_comparison':
+                chart = generate_category_comparison_chart(chart_type=chart_type)
+                report_title = 'Services vs Products Analysis'
+        
+        except Exception as e:
+            print(f"Error processing data: {e}")
     
-    return render_template('analyst.html', chart=chart, report_type=report_type)
+    # Format values as Thai Baht
+    formatted_revenue = format_thai_baht(total_revenue)
+    formatted_cost = format_thai_baht(total_cost)
+    formatted_profit = format_thai_baht(net_profit)
+    
+    # Format category metrics
+    formatted_service_revenue = format_thai_baht(service_revenue)
+    formatted_product_revenue = format_thai_baht(product_revenue)
+    formatted_service_profit = format_thai_baht(service_profit)
+    formatted_product_profit = format_thai_baht(product_profit)
+    
+    # Calculate percentages
+    service_percentage = (service_revenue / total_revenue * 100) if total_revenue > 0 else 0
+    product_percentage = (product_revenue / total_revenue * 100) if total_revenue > 0 else 0
+    
+    return render_template('analyst.html', 
+                          chart=chart, 
+                          report_type=report_type,
+                          chart_type=chart_type,
+                          date_range=date_range,
+                          comparison=comparison,
+                          total_revenue=formatted_revenue,
+                          total_cost=formatted_cost,
+                          net_profit=formatted_profit,
+                          service_revenue=formatted_service_revenue,
+                          product_revenue=formatted_product_revenue,
+                          service_profit=formatted_service_profit,
+                          product_profit=formatted_product_profit,
+                          service_percentage=f"{service_percentage:.1f}%",
+                          product_percentage=f"{product_percentage:.1f}%",
+                          last_updated=last_updated,
+                          report_title=report_title)
+
+@app.route('/simulator')
+def simulator():
+    """Pricing simulator to help optimize profit based on historical data"""
+    # Default values
+    items_data = []
+    last_updated = datetime.now().strftime('%d %B %Y, %H:%M')
+    
+    if os.path.exists('data/jobs.csv'):
+        try:
+            # Load jobs data
+            jobs_df = pd.read_csv('data/jobs.csv')
+            
+            # Ensure required columns exist
+            if all(col in jobs_df.columns for col in ['item', 'quantity', 'price', 'cost']):
+                # Calculate current metrics
+                jobs_df['revenue'] = jobs_df['price'] * jobs_df['quantity']
+                jobs_df['profit'] = jobs_df['revenue'] - (jobs_df['cost'] * jobs_df['quantity'])
+                
+                # Group by item
+                item_metrics = jobs_df.groupby('item').agg({
+                    'quantity': 'sum',
+                    'revenue': 'sum',
+                    'profit': 'sum',
+                    'price': 'mean',
+                    'cost': 'mean'
+                }).reset_index()
+                
+                # Calculate profit margin and potential optimizations
+                item_metrics['profit_margin'] = (item_metrics['profit'] / item_metrics['revenue'] * 100).round(2)
+                
+                # Calculate potential price increases (5%, 10%, 15%)
+                for pct in [5, 10, 15]:
+                    # New price with increase
+                    new_price_col = f'price_{pct}pct'
+                    item_metrics[new_price_col] = (item_metrics['price'] * (1 + pct/100)).round(0)
+                    
+                    # Estimate new profit (assuming same quantity sold)
+                    new_revenue_col = f'revenue_{pct}pct'
+                    item_metrics[new_revenue_col] = item_metrics['quantity'] * item_metrics[new_price_col]
+                    
+                    # New profit
+                    new_profit_col = f'profit_{pct}pct'
+                    item_metrics[new_profit_col] = item_metrics[new_revenue_col] - (item_metrics['cost'] * item_metrics['quantity'])
+                    
+                    # Profit increase
+                    profit_increase_col = f'profit_increase_{pct}pct'
+                    item_metrics[profit_increase_col] = item_metrics[new_profit_col] - item_metrics['profit']
+                
+                # Convert to list of dicts for template
+                items_data = item_metrics.to_dict('records')
+                
+                # Sort by potential profit increase (10% scenario)
+                items_data = sorted(items_data, key=lambda x: x.get('profit_increase_10pct', 0), reverse=True)
+                
+                # Format currency values for display
+                for item in items_data:
+                    for key in item:
+                        if key in ['price', 'cost'] or 'price_' in key:
+                            item[key] = f'฿{item[key]:,.0f}'
+                        elif any(term in key for term in ['revenue', 'profit']):
+                            item[key] = f'฿{item[key]:,.2f}'
+        
+        except Exception as e:
+            print(f"Error in simulator calculations: {e}")
+    
+    return render_template('simulator.html', 
+                           items_data=items_data,
+                           last_updated=last_updated)
 
 @app.route('/customers', methods=['GET', 'POST'])
 def customers():
@@ -88,10 +350,46 @@ def services():
 
 @app.route('/job', methods=['GET', 'POST'])
 def job():
+    # Initialize variables that will be used across all code paths
+    jobs = []
+    search_customer = request.args.get('search_customer', '').strip().lower()
+    
+    # Load jobs data for search results
+    try:
+        if os.path.exists('data/jobs.csv'):
+            # Try to load the jobs data
+            jobs_df = pd.read_csv('data/jobs.csv')
+            
+            # Convert price, quantity, and cost columns to numeric values
+            if not jobs_df.empty:
+                for col in ['price', 'quantity', 'cost']:
+                    if col in jobs_df.columns:
+                        jobs_df[col] = pd.to_numeric(jobs_df[col], errors='coerce').fillna(0)
+            
+            # Apply search filter if provided
+            if search_customer:
+                # Filter jobs by customer name containing the search term
+                jobs_df = jobs_df[jobs_df['customer'].str.lower().str.contains(search_customer, na=False)]
+            
+            # Make sure the timestamp column is in datetime format for proper sorting
+            if 'timestamp' in jobs_df.columns:
+                try:
+                    jobs_df['timestamp'] = pd.to_datetime(jobs_df['timestamp'], errors='coerce')
+                except:
+                    pass
+            
+            # Sort by timestamp in descending order (newest first)
+            jobs_df = jobs_df.sort_values(by='timestamp', ascending=False)
+            
+            # Convert to list of dictionaries for the template
+            jobs = jobs_df.to_dict('records')
+    except Exception as e:
+        print(f"Error loading jobs data: {e}")
+    
     # Prevent use if services.json or inventory.json is missing
     if not (os.path.exists('data/services.json') and os.path.exists('data/inventory.json')):
         # Remove flash, just render with disable_form
-        return render_template('job.html', disable_form=True)
+        return render_template('job.html', disable_form=True, jobs=jobs, search_customer=search_customer)
 
     _customers = [ {
         "name": "dummy",
@@ -112,13 +410,38 @@ def job():
         item_name = request.form.get('item')
         quantity = int(request.form.get('quantity', 1))
         price = float(request.form.get('price', 0))
+        cost = float(request.form.get('cost', 0))  # Get the cost from the form
 
         if not item_name:
             flash('Please select an item.', 'error')
             return redirect(url_for('job'))
+            
+        # Calculate total price and cost
+        total_price = price * quantity
+        total_cost = cost  # Cost is already calculated based on quantity in the frontend
+        
+        # Determine item category (service or product)
+        item_category = "unknown"
+        # Check if item is in services
+        for service in services:
+            if service.get('name') == item_name:
+                item_category = "service"
+                break
+        # If not found in services, check inventory
+        if item_category == "unknown":
+            for item in inventory:
+                if item.get('name') == item_name:
+                    item_category = "product"
+                    break
+        
+        # If no jobs.csv file exists, create it with headers
+        if not os.path.exists('data/jobs.csv'):
+            with open('data/jobs.csv', 'w', newline='') as f:
+                csv.writer(f).writerow(['timestamp', 'date', 'customer', 'item', 'quantity', 'price', 'cost', 'category'])
 
+        # Append the new job
         with open('data/jobs.csv', 'a', newline='') as f:
-            csv.writer(f).writerow([datetime.now().isoformat(), date, customer, item_name, quantity, price])
+            csv.writer(f).writerow([datetime.now().isoformat(), date, customer, item_name, quantity, price, total_cost, item_category])
 
         for item in inventory:
             if item['name'] == item_name:
@@ -130,15 +453,11 @@ def job():
                 break
         with open('data/inventory.json', 'w') as f:
             json.dump(inventory, f, indent=2)
+        # Redirect to job route - load jobs again to show updated data
         return redirect(url_for('job'))
 
-    with open('static/customers.json', 'w') as f:
-        json.dump(_customers, f)
-    with open('static/services.json', 'w') as f:
-        json.dump(services, f)
-    with open('static/inventory.json', 'w') as f:
-        json.dump(inventory, f)
-    return render_template('job.html')
+    # No need to duplicate data in static folder
+    return render_template('job.html', disable_form=False, jobs=jobs, search_customer=search_customer)
 
 @app.route('/inventory', methods=['GET', 'POST'])
 def inventory():
@@ -206,6 +525,20 @@ def inventory():
         search_name=request.args.get('search_name', '')
     )
 
+
+# Helper function for Thai Baht formatting
+def format_thai_baht(amount):
+    if amount is None:
+        return '฿0.00'
+    try:
+        return '฿{:,.2f}'.format(float(amount))
+    except (ValueError, TypeError):
+        return '฿0.00'
+
+# Route to serve files from data directory
+@app.route('/data/<path:filename>')
+def serve_data(filename):
+    return send_from_directory('data', filename)
 
 if __name__ == '__main__':
     app.run(debug=True)
