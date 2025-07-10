@@ -9,6 +9,11 @@ import base64
 import os
 import json
 import numpy as np
+import sys
+
+# Import path handling utilities
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from path_fix import get_data_path, get_data_file_path
 
 # Thai Baht symbol
 BAHT_SYMBOL = '฿'
@@ -18,20 +23,22 @@ def load_jobs_data():
     """Load jobs data from jobs.csv with fallbacks for different formats"""
     try:
         # Try to load with headers first
+        jobs_path = get_data_file_path('jobs.csv')
+        print(f"Looking for jobs file at: {jobs_path}")
         try:
-            jobs_df = pd.read_csv('data/jobs.csv')
+            jobs_df = pd.read_csv(jobs_path)
             print("Loaded jobs.csv with headers")
         except Exception as e1:
             print(f"Error loading with headers: {e1}")
             # Try different column configurations
             try:
-                jobs_df = pd.read_csv('data/jobs.csv', header=None,
+                jobs_df = pd.read_csv(jobs_path, header=None,
                               names=['timestamp', 'date', 'customer', 'item', 'quantity', 'price', 'cost', 'category'])
                 print("Loaded jobs.csv with 8 columns")
             except Exception as e2:
                 print(f"Error loading with 8 columns: {e2}")
                 try:
-                    jobs_df = pd.read_csv('data/jobs.csv', header=None,
+                    jobs_df = pd.read_csv(jobs_path, header=None,
                                   names=['timestamp', 'date', 'customer', 'item', 'quantity', 'price', 'cost'])
                     print("Loaded jobs.csv with 7 columns")
                 except Exception as e3:
@@ -80,14 +87,15 @@ def load_jobs_data():
         if 'category' not in jobs_df.columns:
             # Create category mapping
             category_map = {}
-            if os.path.exists('data/services.json'):
-                with open('data/services.json', 'r') as f:
-                    services = json.load(f)
-                    for service in services:
-                        category_map[service.get('name')] = "service"
-                        
-            if os.path.exists('data/inventory.json'):
-                with open('data/inventory.json', 'r') as f:
+            services_path = get_data_file_path('services.json')
+            if os.path.exists(services_path):
+                with open(services_path, 'r') as f:
+                    services_data = json.load(f)
+                    service_costs = {service['name']: service.get('cost', 0) for service in services_data}
+            
+            inventory_path = get_data_file_path('inventory.json')
+            if os.path.exists(inventory_path):
+                with open(inventory_path, 'r') as f:
                     inventory = json.load(f)
                     for item in inventory:
                         category_map[item.get('name')] = "product"
@@ -288,8 +296,9 @@ def generate_item_profit_chart(chart_type='pie'):
             # If no category column, try to determine products by loading inventory data
             inventory_items = []
             try:
-                if os.path.exists('data/inventory.json'):
-                    with open('data/inventory.json', 'r') as f:
+                inventory_path = get_data_file_path('inventory.json')
+                if os.path.exists(inventory_path):
+                    with open(inventory_path, 'r') as f:
                         inventory = json.load(f)
                         inventory_items = [item.get('name') for item in inventory]
             except Exception as e:

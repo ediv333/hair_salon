@@ -6,6 +6,10 @@ from datetime import datetime
 from utils.graph_utils import generate_profit_chart, generate_item_profit_chart, generate_service_profit_chart, generate_daily_revenue_chart
 import os
 import locale
+import sys
+
+# Import the path handling utilities
+from path_fix import get_data_path, get_data_file_path
 
 # Set locale for Thai Baht formatting
 try:
@@ -34,16 +38,18 @@ def analyst():
     last_updated = datetime.now().strftime('%d %B %Y, %H:%M')
     report_title = 'Sales Analysis'
     
-    if os.path.exists('data/jobs.csv'):
-        # Load jobs data
+    # Load jobs data if available
+    jobs_path = get_data_file_path('jobs.csv')
+    if os.path.exists(jobs_path):
         try:
-            # Debug print statement to check if the file exists
-            print(f"Jobs CSV exists: {os.path.exists('data/jobs.csv')}")
+            # Load jobs data for analysis
+            # Debug info
+            print(f"Jobs CSV exists: {os.path.exists(jobs_path)}")
             
             # Try to load jobs.csv with different approaches
             try:
                 # First attempt: Try with the full column set
-                jobs_df = pd.read_csv('data/jobs.csv', header=None, 
+                jobs_df = pd.read_csv(jobs_path, header=None, 
                                names=['timestamp', 'date', 'customer', 'item', 'quantity', 'price', 'cost', 'category'])
                 print("Loaded with 8 columns")
                 
@@ -51,7 +57,7 @@ def analyst():
                 print(f"Error loading with 8 columns: {e1}")
                 try:
                     # Second attempt: Try with just cost
-                    jobs_df = pd.read_csv('data/jobs.csv', header=None, 
+                    jobs_df = pd.read_csv(jobs_path, header=None, 
                                    names=['timestamp', 'date', 'customer', 'item', 'quantity', 'price', 'cost'])
                     print("Loaded with 7 columns")
                     # Add category column
@@ -61,7 +67,7 @@ def analyst():
                     print(f"Error loading with 7 columns: {e2}")
                     try:
                         # Third attempt: Try original format
-                        jobs_df = pd.read_csv('data/jobs.csv', header=None, 
+                        jobs_df = pd.read_csv(jobs_path, header=None, 
                                       names=['timestamp', 'date', 'customer', 'item', 'quantity', 'price'])
                         print("Loaded with 6 columns")
                         # Add missing columns
@@ -83,11 +89,13 @@ def analyst():
                 # Get services and inventory for cost mapping
                 services = []
                 inventory = []
-                if os.path.exists('data/services.json'):
-                    with open('data/services.json', 'r') as f:
+                services_path = get_data_file_path('services.json')
+                if os.path.exists(services_path):
+                    with open(services_path, 'r') as f:
                         services = json.load(f)
-                if os.path.exists('data/inventory.json'):
-                    with open('data/inventory.json', 'r') as f:
+                inventory_path = get_data_file_path('inventory.json')
+                if os.path.exists(inventory_path):
+                    with open(inventory_path, 'r') as f:
                         inventory = json.load(f)
                 
                 # Create cost mapping
@@ -223,10 +231,12 @@ def simulator():
     items_data = []
     last_updated = datetime.now().strftime('%d %B %Y, %H:%M')
     
-    if os.path.exists('data/jobs.csv'):
+    # Use our path utility to get the correct path to the jobs.csv file
+    jobs_path = get_data_file_path('jobs.csv')
+    if os.path.exists(jobs_path):
         try:
-            # Load jobs data
-            jobs_df = pd.read_csv('data/jobs.csv')
+            # Load jobs data using the correct path
+            jobs_df = pd.read_csv(jobs_path)
             
             # Ensure required columns exist
             if all(col in jobs_df.columns for col in ['item', 'quantity', 'price', 'cost']):
@@ -287,7 +297,7 @@ def simulator():
 
 @app.route('/customers', methods=['GET', 'POST'])
 def customers():
-    path = 'data/customers.json'
+    path = get_data_file_path('customers.json')
     _customers = []
     if os.path.exists(path):
         # Load customers
@@ -318,7 +328,7 @@ def customers():
 
 @app.route('/services', methods=['GET', 'POST'])
 def services():
-    path = 'data/services.json'
+    path = get_data_file_path('services.json')
     _services = []
     if os.path.isfile(path):
         with open(path, 'r') as f:
@@ -356,9 +366,10 @@ def job():
     
     # Load jobs data for search results
     try:
-        if os.path.exists('data/jobs.csv'):
-            # Try to load the jobs data
-            jobs_df = pd.read_csv('data/jobs.csv')
+        jobs_path = get_data_file_path('jobs.csv')
+        if os.path.exists(jobs_path):
+            # Get existing job data
+            jobs_df = pd.read_csv(jobs_path)
             
             # Convert price, quantity, and cost columns to numeric values
             if not jobs_df.empty:
@@ -387,7 +398,9 @@ def job():
         print(f"Error loading jobs data: {e}")
     
     # Prevent use if services.json or inventory.json is missing
-    if not (os.path.exists('data/services.json') and os.path.exists('data/inventory.json')):
+    services_path = get_data_file_path('services.json')
+    inventory_path = get_data_file_path('inventory.json')
+    if not (os.path.exists(services_path) and os.path.exists(inventory_path)):
         # Remove flash, just render with disable_form
         return render_template('job.html', disable_form=True, jobs=jobs, search_customer=search_customer)
 
@@ -397,12 +410,15 @@ def job():
         "birthday": '',
         "note": ""
       }]
-    if os.path.exists('data/customers.json'):  # Fix: Changed customers.csv to customers.json
-        with open('data/customers.json', 'r') as f:
+    customers_path = get_data_file_path('customers.json')
+    if os.path.exists(customers_path):
+        with open(customers_path, 'r') as f:
             _customers = json.load(f)
-    with open('data/services.json', 'r') as f:
+    services_path = get_data_file_path('services.json')
+    with open(services_path, 'r') as f:
         services = json.load(f)
-    with open('data/inventory.json', 'r') as f:
+    inventory_path = get_data_file_path('inventory.json')
+    with open(inventory_path, 'r') as f:
         inventory = json.load(f)
     if request.method == 'POST':
         date = request.form.get('date')
@@ -435,12 +451,15 @@ def job():
                     break
         
         # If no jobs.csv file exists, create it with headers
-        if not os.path.exists('data/jobs.csv'):
-            with open('data/jobs.csv', 'w', newline='') as f:
+        jobs_path = get_data_file_path('jobs.csv')
+        if not os.path.exists(jobs_path):
+            # Ensure data directory exists
+            data_dir = get_data_path()
+            with open(jobs_path, 'w', newline='') as f:
                 csv.writer(f).writerow(['timestamp', 'date', 'customer', 'item', 'quantity', 'price', 'cost', 'category'])
 
         # Append the new job
-        with open('data/jobs.csv', 'a', newline='') as f:
+        with open(jobs_path, 'a', newline='') as f:
             csv.writer(f).writerow([datetime.now().isoformat(), date, customer, item_name, quantity, price, total_cost, item_category])
 
         for item in inventory:
@@ -451,7 +470,8 @@ def job():
                 except Exception:
                     pass
                 break
-        with open('data/inventory.json', 'w') as f:
+        inventory_path = get_data_file_path('inventory.json')
+        with open(inventory_path, 'w') as f:
             json.dump(inventory, f, indent=2)
         # Redirect to job route - load jobs again to show updated data
         return redirect(url_for('job'))
@@ -461,7 +481,7 @@ def job():
 
 @app.route('/inventory', methods=['GET', 'POST'])
 def inventory():
-    path = 'data/inventory.json'
+    path = get_data_file_path('inventory.json')
     try:
         with open(path, 'r') as f:
             inventory = json.load(f)
