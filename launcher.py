@@ -12,10 +12,52 @@ import requests
 import io
 import zipfile
 import shutil
+import psutil
 from pathlib import Path
 import json
 from flask import Flask, request, jsonify
 from app import app
+
+# Process management - kill any existing anyada.exe processes
+def kill_existing_processes():
+    """Check for and kill any existing anyada.exe processes"""
+    current_pid = os.getpid()
+    executable_name = 'anyada.exe'
+    
+    print(f"Checking for existing {executable_name} processes...")
+    killed_count = 0
+    
+    # Get our own process name for comparison
+    try:
+        this_process = psutil.Process(current_pid)
+        our_name = this_process.name()
+        print(f"Current process name: {our_name}, PID: {current_pid}")
+    except Exception as e:
+        print(f"Error getting current process name: {e}")
+        our_name = executable_name
+    
+    # Look for other instances of our process
+    for proc in psutil.process_iter(['pid', 'name']):
+        try:
+            # Check if this process matches our executable name and is not the current process
+            if (proc.info['name'].lower() == executable_name.lower() or 
+                (getattr(sys, 'frozen', False) and proc.info['name'].lower() == our_name.lower())) \
+                and proc.info['pid'] != current_pid:
+                    print(f"Found existing process: {proc.info['name']} (PID: {proc.info['pid']})")
+                    proc.kill()
+                    print(f"Killed process with PID: {proc.info['pid']}")
+                    killed_count += 1
+        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+            pass
+    
+    if killed_count > 0:
+        print(f"Killed {killed_count} existing instances of {executable_name}")
+        # Give processes time to fully terminate
+        time.sleep(1)
+    else:
+        print("No existing instances found")
+    
+    return killed_count
 
 # Configuration
 REPO_URL = "https://github.com/ediv333/hair_salon"
@@ -316,6 +358,14 @@ def update():
 
 # Main execution
 if __name__ == '__main__':
+    # Check for and kill any existing instances of the application
+    if getattr(sys, 'frozen', False):
+        # Only check for other processes when running as executable
+        print("Running as executable, checking for other instances...")
+        killed_count = kill_existing_processes()
+        if killed_count > 0:
+            print(f"Killed {killed_count} existing instance(s) of anyada.exe")
+    
     # Start browser in a separate thread
     threading.Thread(target=open_browser).start()
     
