@@ -26,7 +26,7 @@ def api_customers():
     print(f"Loading customers from: {customers_path}")
     if os.path.exists(customers_path):
         try:
-            with open(customers_path, 'r') as f:
+            with open(customers_path, 'r', encoding='utf-8') as f:
                 customers_data = json.load(f)
                 print(f"Loaded {len(customers_data)} customers: {[c.get('name', 'Unknown') for c in customers_data]}")
                 return customers_data
@@ -43,7 +43,7 @@ def api_services():
     print(f"Loading services from: {services_path}")
     if os.path.exists(services_path):
         try:
-            with open(services_path, 'r') as f:
+            with open(services_path, 'r', encoding='utf-8') as f:
                 services_data = json.load(f)
                 print(f"Loaded {len(services_data)} services")
                 return services_data
@@ -60,7 +60,7 @@ def api_inventory():
     print(f"Loading inventory from: {inventory_path}")
     if os.path.exists(inventory_path):
         try:
-            with open(inventory_path, 'r') as f:
+            with open(inventory_path, 'r', encoding='utf-8') as f:
                 inventory_data = json.load(f)
                 print(f"Loaded {len(inventory_data)} inventory items")
                 return inventory_data
@@ -143,11 +143,11 @@ def analyst():
                 inventory = []
                 services_path = get_data_file_path('services.json')
                 if os.path.exists(services_path):
-                    with open(services_path, 'r') as f:
+                    with open(services_path, 'r', encoding='utf-8') as f:
                         services = json.load(f)
                 inventory_path = get_data_file_path('inventory.json')
                 if os.path.exists(inventory_path):
-                    with open(inventory_path, 'r') as f:
+                    with open(inventory_path, 'r', encoding='utf-8') as f:
                         inventory = json.load(f)
                 
                 # Create cost mapping
@@ -353,7 +353,7 @@ def customers():
     _customers = []
     if os.path.exists(path):
         # Load customers
-        with open(path, 'r') as f:
+        with open(path, 'r', encoding='utf-8') as f:
             _customers = json.load(f)
     search_query = request.args.get('search', '').strip().lower()
     if request.method == 'POST':
@@ -368,7 +368,7 @@ def customers():
         elif action == 'update':
             idx = int(request.form.get('idx'))
             _customers[idx] = {'name': name, 'phone': phone, 'birthday': birthday, 'note': note}
-        with open(path, 'w') as f:
+        with open(path, 'w', encoding='utf-8') as f:
             json.dump(_customers, f, indent=2)
         return redirect(url_for('customers'))
     # Filter customers if search query is present
@@ -383,7 +383,7 @@ def services():
     path = get_data_file_path('services.json')
     _services = []
     if os.path.isfile(path):
-        with open(path, 'r') as f:
+        with open(path, 'r', encoding='utf-8') as f:
             _services = json.load(f)
     search_query = request.args.get('search', '').strip().lower()
     if request.method == 'POST':
@@ -400,7 +400,7 @@ def services():
         elif action == 'remove':
             idx = int(request.form.get('idx'))
             _services.pop(idx)
-        with open(path, 'w') as f:
+        with open(path, 'w', encoding='utf-8') as f:
             json.dump(_services, f, indent=2)
         return redirect(url_for('services'))
     # Filter services if search query is present
@@ -464,13 +464,13 @@ def job():
       }]
     customers_path = get_data_file_path('customers.json')
     if os.path.exists(customers_path):
-        with open(customers_path, 'r') as f:
+        with open(customers_path, 'r', encoding='utf-8') as f:
             _customers = json.load(f)
     services_path = get_data_file_path('services.json')
     with open(services_path, 'r') as f:
         services = json.load(f)
     inventory_path = get_data_file_path('inventory.json')
-    with open(inventory_path, 'r') as f:
+    with open(inventory_path, 'r', encoding='utf-8') as f:
         inventory = json.load(f)
     if request.method == 'POST':
         date = request.form.get('date')
@@ -507,11 +507,11 @@ def job():
         if not os.path.exists(jobs_path):
             # Ensure data directory exists
             data_dir = get_data_path()
-            with open(jobs_path, 'w', newline='') as f:
+            with open(jobs_path, 'w', newline='', encoding='utf-8') as f:
                 csv.writer(f).writerow(['timestamp', 'date', 'customer', 'item', 'quantity', 'price', 'cost', 'category'])
 
         # Append the new job
-        with open(jobs_path, 'a', newline='') as f:
+        with open(jobs_path, 'a', newline='', encoding='utf-8') as f:
             csv.writer(f).writerow([datetime.now().isoformat(), date, customer, item_name, quantity, price, total_cost, item_category])
 
         for item in inventory:
@@ -523,7 +523,7 @@ def job():
                     pass
                 break
         inventory_path = get_data_file_path('inventory.json')
-        with open(inventory_path, 'w') as f:
+        with open(inventory_path, 'w', encoding='utf-8') as f:
             json.dump(inventory, f, indent=2)
         # Redirect to job route - load jobs again to show updated data
         return redirect(url_for('job'))
@@ -535,7 +535,7 @@ def job():
 def inventory():
     path = get_data_file_path('inventory.json')
     try:
-        with open(path, 'r') as f:
+        with open(path, 'r', encoding='utf-8') as f:
             inventory = json.load(f)
     except FileNotFoundError:
         inventory = []
@@ -584,7 +584,7 @@ def inventory():
         elif action == 'remove':
             idx = int(request.form.get('idx'))
             inventory.pop(idx)
-        with open(path, 'w') as f:
+        with open(path, 'w', encoding='utf-8') as f:
             json.dump(inventory, f, indent=2)
         return redirect(url_for('inventory'))
     filtered_inventory = inventory
