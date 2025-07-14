@@ -369,7 +369,7 @@ def customers():
             idx = int(request.form.get('idx'))
             _customers[idx] = {'name': name, 'phone': phone, 'birthday': birthday, 'note': note}
         with open(path, 'w', encoding='utf-8') as f:
-            json.dump(_customers, f, indent=2)
+            json.dump(_customers, f, indent=2, ensure_ascii=False)
         return redirect(url_for('customers'))
     # Filter customers if search query is present
     if search_query:
@@ -401,7 +401,7 @@ def services():
             idx = int(request.form.get('idx'))
             _services.pop(idx)
         with open(path, 'w', encoding='utf-8') as f:
-            json.dump(_services, f, indent=2)
+            json.dump(_services, f, indent=2, ensure_ascii=False)
         return redirect(url_for('services'))
     # Filter services if search query is present
     if search_query:
@@ -524,7 +524,7 @@ def job():
                 break
         inventory_path = get_data_file_path('inventory.json')
         with open(inventory_path, 'w', encoding='utf-8') as f:
-            json.dump(inventory, f, indent=2)
+            json.dump(inventory, f, indent=2, ensure_ascii=False)
         # Redirect to job route - load jobs again to show updated data
         return redirect(url_for('job'))
 
@@ -585,7 +585,7 @@ def inventory():
             idx = int(request.form.get('idx'))
             inventory.pop(idx)
         with open(path, 'w', encoding='utf-8') as f:
-            json.dump(inventory, f, indent=2)
+            json.dump(inventory, f, indent=2, ensure_ascii=False)
         return redirect(url_for('inventory'))
     filtered_inventory = inventory
     if search_name:
