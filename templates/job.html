@@ -276,7 +276,12 @@ document.addEventListener('DOMContentLoaded', function() {
     // Load customers from API route with cache busting to ensure fresh data
     if (document.getElementById('customer')) {
         fetch('/api/customers?_=' + new Date().getTime())
-            .then(r => r.json())
+            .then(r => {
+                if (!r.ok) {
+                    throw new Error('Network response was not ok: ' + r.statusText);
+                }
+                return r.json();
+            })
             .then(data => {
                 customers = data;
                 let sel = document.getElementById('customer');
@@ -288,6 +293,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         sel.appendChild(opt);
                     }
                 });
+            })
+            .catch(error => {
+                console.error('Error loading customers:', error);
+                alert('Failed to load customers. Please try refreshing the page.');
             });
     }
 
@@ -337,20 +346,34 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         fetch('/api/services?_=' + new Date().getTime())
-            .then(r => r.json())
+            .then(r => {
+                if (!r.ok) {
+                    throw new Error('Network response was not ok: ' + r.statusText);
+                }
+                return r.json();
+            })
             .then(data => {
                 services = data;
-                fetch('/api/inventory?_=' + new Date().getTime())
-                    .then(r => r.json())
-                    .then(invData => {
-                        inventory = invData;
-                        populateItemDropdown('all'); // Initially populate with all items
-                        
-                        // Add event listener for category filter
-                        document.getElementById('itemCategory').addEventListener('change', function() {
-                            populateItemDropdown(this.value);
-                        });
-                    });
+                return fetch('/api/inventory?_=' + new Date().getTime());
+            })
+            .then(r => {
+                if (!r.ok) {
+                    throw new Error('Network response was not ok: ' + r.statusText);
+                }
+                return r.json();
+            })
+            .then(invData => {
+                inventory = invData;
+                populateItemDropdown('all'); // Initially populate with all items
+
+                // Add event listener for category filter
+                document.getElementById('itemCategory').addEventListener('change', function() {
+                    populateItemDropdown(this.value);
+                });
+            })
+            .catch(error => {
+                console.error('Error loading items:', error);
+                alert('Failed to load services or inventory. Please try refreshing the page.');
             });
 
         document.getElementById('item').addEventListener('change', function() {
@@ -390,26 +413,12 @@ document.addEventListener('DOMContentLoaded', function() {
             let cost = costMap[iname] !== undefined ? parseFloat(costMap[iname]) : 0;
             let price = parseFloat(this.value);
             
-            if (!isNaN(price) && price <= cost) {
-                alert('Warning: Price is equal to or less than cost!');
-            }
-            
+            // Alert removed - profit will be shown in red if negative
+
             updateProfitMargin(price, cost);
         });
     }
 
-    if (document.getElementById('jobForm')) {
-        document.getElementById('jobForm').addEventListener('submit', function(e) {
-            let iname = document.getElementById('item').value;
-            let cost = costMap[iname] !== undefined ? parseFloat(costMap[iname]) : 0;
-            let price = parseFloat(document.getElementById('price').value);
-            if (!isNaN(price) && price <= cost) {
-                if (!confirm('Price is equal to or less than cost. Continue?')) {
-                    e.preventDefault();
-                }
-            }
-        });
-    }
 });
 </script>
 {% endblock %}

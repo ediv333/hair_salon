@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, get_flashed_messages, send_from_directory
+from flask import Flask, render_template, request, redirect, url_for, flash, get_flashed_messages, send_from_directory, jsonify
 import pandas as pd
 import json
 import csv
@@ -10,6 +10,8 @@ import sys
 
 # Import the path handling utilities
 from path_fix import get_data_path, get_data_file_path
+# Import app configuration
+from config import configure_app
 
 # Set locale for Thai Baht formatting
 try:
@@ -18,6 +20,7 @@ except:
     pass  # Fallback if locale is not supported
 
 app = Flask(__name__)
+app = configure_app(app)
 
 # API routes for accessing data files
 @app.route('/api/customers')
@@ -29,13 +32,13 @@ def api_customers():
             with open(customers_path, 'r', encoding='utf-8') as f:
                 customers_data = json.load(f)
                 print(f"Loaded {len(customers_data)} customers: {[c.get('name', 'Unknown') for c in customers_data]}")
-                return customers_data
+                return jsonify(customers_data)
         except Exception as e:
             print(f"Error loading customers: {e}")
-            return []
+            return jsonify([])
     else:
         print(f"No customers file found at {customers_path}")
-        return []
+        return jsonify([])
 
 @app.route('/api/services')
 def api_services():
@@ -46,13 +49,13 @@ def api_services():
             with open(services_path, 'r', encoding='utf-8') as f:
                 services_data = json.load(f)
                 print(f"Loaded {len(services_data)} services")
-                return services_data
+                return jsonify(services_data)
         except Exception as e:
             print(f"Error loading services: {e}")
-            return []
+            return jsonify([])
     else:
         print(f"No services file found at {services_path}")
-        return []
+        return jsonify([])
 
 @app.route('/api/inventory')
 def api_inventory():
@@ -63,13 +66,13 @@ def api_inventory():
             with open(inventory_path, 'r', encoding='utf-8') as f:
                 inventory_data = json.load(f)
                 print(f"Loaded {len(inventory_data)} inventory items")
-                return inventory_data
+                return jsonify(inventory_data)
         except Exception as e:
             print(f"Error loading inventory: {e}")
-            return []
+            return jsonify([])
     else:
         print(f"No inventory file found at {inventory_path}")
-        return []
+        return jsonify([])
 
 @app.route('/')
 def analyst():

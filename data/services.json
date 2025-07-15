@@ -1,17 +1,2 @@
 [
-  {
-    "name": "coloring long hair",
-    "cost": "200",
-    "price": "300"
-  },
-  {
-    "name": "coloring short hair",
-    "cost": "100",
-    "price": "200"
-  },
-  {
-    "name": "wash&dry",
-    "cost": "100",
-    "price": "200"
-  }
 ]
