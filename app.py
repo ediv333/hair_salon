@@ -7,11 +7,66 @@ from utils.graph_utils import generate_profit_chart, generate_item_profit_chart,
 import os
 import locale
 import sys
+import logging
+from logging.handlers import RotatingFileHandler
+import io
 
 # Import the path handling utilities
 from path_fix import get_data_path, get_data_file_path
 # Import app configuration
 from config import configure_app
+
+# Set up logger with FileHandler
+log_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'app.log')
+logger = logging.getLogger('hair_salon_app')
+logger.setLevel(logging.DEBUG)
+
+# Create file handler for the logger (10MB max size, keep 5 backup files)
+file_handler = RotatingFileHandler(log_file_path, maxBytes=10*1024*1024, backupCount=5)
+file_handler.setLevel(logging.DEBUG)
+
+# Create formatter and add it to the handler
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s')
+file_handler.setFormatter(formatter)
+logger.addHandler(file_handler)
+
+# Create a stream handler to console as well
+stream_handler = logging.StreamHandler()
+stream_handler.setLevel(logging.DEBUG)
+stream_handler.setFormatter(formatter)
+logger.addHandler(stream_handler)
+
+# Create custom stdout and stderr streams that log to our logger
+class LoggerWriter:
+    def __init__(self, logger, level):
+        self.logger = logger
+        self.level = level
+        self.buffer = ''
+
+    def write(self, message):
+        if message and message.strip():
+            self.logger.log(self.level, message.strip())
+
+    def flush(self):
+        pass
+
+# Redirect stdout and stderr to our logger
+sys.stdout = LoggerWriter(logger, logging.INFO)
+sys.stderr = LoggerWriter(logger, logging.ERROR)
+
+# Override print function to log messages
+original_print = print
+def logged_print(*args, **kwargs):
+    output = io.StringIO()
+    original_print(*args, file=output, **kwargs)
+    message = output.getvalue().strip()
+    if message:
+        logger.info(message)
+    original_print(*args, **kwargs)
+
+print = logged_print
+
+logger.info('Logger initialized successfully')
 
 # Set locale for Thai Baht formatting
 try:
@@ -21,6 +76,9 @@ except:
 
 app = Flask(__name__)
 app = configure_app(app)
+
+# Default to service menu disabled unless specifically enabled by launcher
+app.config.setdefault('SERVICE_MENU_ENABLED', False)
 
 # API routes for accessing data files
 @app.route('/api/customers')
@@ -616,4 +674,5 @@ def serve_data(filename):
     return send_from_directory('data', filename)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    logger.info('Starting Flask application')
+    app.run(host='0.0.0.0', debug=True)
