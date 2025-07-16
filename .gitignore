@@ -189,6 +189,16 @@ data_backup/
 temp_update/
 app.log*
 
+# Test specific
+.coverage
+coverage.xml
+htmlcov/
+.pytest_cache/
+*.pytest_cache
+pytest-report.xml
+.hypothesis/
+__pycache__/
+
 # Visual Studio Code
 #  Visual Studio Code specific template is maintained in a separate VisualStudioCode.gitignore 
 #  that can be found at https://github.com/github/gitignore/blob/main/Global/VisualStudioCode.gitignore

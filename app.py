@@ -45,24 +45,44 @@ class LoggerWriter:
 
     def write(self, message):
         if message and message.strip():
-            self.logger.log(self.level, message.strip())
+            try:
+                self.logger.log(self.level, message.strip())
+            except Exception as e:
+                # Fail silently if we can't log - prevents recursion errors
+                pass
 
     def flush(self):
         pass
 
-# Redirect stdout and stderr to our logger
-sys.stdout = LoggerWriter(logger, logging.INFO)
-sys.stderr = LoggerWriter(logger, logging.ERROR)
+# Only redirect stdout/stderr in development mode, not when running as executable
+# This prevents recursion issues in PyInstaller executables
+if not getattr(sys, 'frozen', False):
+    # Running in normal Python environment
+    sys.stdout = LoggerWriter(logger, logging.INFO)
+    sys.stderr = LoggerWriter(logger, logging.ERROR)
 
-# Override print function to log messages
+# Override print function to log messages, but safely
 original_print = print
 def logged_print(*args, **kwargs):
-    output = io.StringIO()
-    original_print(*args, file=output, **kwargs)
-    message = output.getvalue().strip()
-    if message:
-        logger.info(message)
-    original_print(*args, **kwargs)
+    try:
+        # First ensure normal print works
+        original_print(*args, **kwargs)
+        # Then try to log it
+        if getattr(sys, 'frozen', False):
+            # When running as executable, don't try to log via stringIO
+            # which can cause recursion issues
+            message = ' '.join(str(arg) for arg in args)
+            logger.info(message)
+        else:
+            # In development mode, we can use StringIO
+            output = io.StringIO()
+            original_print(*args, file=output, **kwargs)
+            message = output.getvalue().strip()
+            if message:
+                logger.info(message)
+    except Exception:
+        # Fallback in case of any logging errors
+        pass
 
 print = logged_print
 
