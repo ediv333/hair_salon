@@ -84,6 +84,7 @@
                                 <input type="number" class="form-control" name="price" id="price" step="0.01" required>
                                 <div class="invalid-feedback">Please enter a valid price.</div>
                             </div>
+                            <small class="form-text text-muted">Prices can be set lower than cost.</small>
                             <div id="profitMargin" class="progress mt-2" style="height: 5px; display: none;">
                                 <div class="progress-bar" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
                             </div>
@@ -408,13 +409,14 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Add handler for price changes
     if (document.getElementById('price')) {
+        // Price input is handled normally - no special increment behavior
+        
+        // Keep regular input handler for other changes (like using arrows/spinner)
         document.getElementById('price').addEventListener('input', function() {
             let iname = document.getElementById('item').value;
             let cost = costMap[iname] !== undefined ? parseFloat(costMap[iname]) : 0;
-            let price = parseFloat(this.value);
+            let price = parseFloat(this.value) || 0;
             
-            // Alert removed - profit will be shown in red if negative
-
             updateProfitMargin(price, cost);
         });
     }
