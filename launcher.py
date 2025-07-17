@@ -73,7 +73,7 @@ PROTECTED_FOLDERS = ["data"]  # Folders to preserve during updates
 # Service configuration
 NSSM_URL = "https://nssm.cc/release/nssm-2.24.zip"
 NSSM_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tools", "nssm")
-SERVICE_NAME = "AnyadaSalon"
+SERVICE_NAME = "anyada"
 SERVICE_DISPLAY_NAME = "Anyada Hair Salon"
 SERVICE_DESCRIPTION = "Hair salon management application"
 

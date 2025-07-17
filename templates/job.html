@@ -81,7 +81,7 @@
                             <label for="price" class="form-label">Price <i class="text-danger">*</i> <span id="costInfo" class="small text-muted"></span></label>
                             <div class="input-group">
                                 <span class="input-group-text">฿</span>
-                                <input type="number" class="form-control" name="price" id="price" step="0.01" required>
+                                <input type="number" class="form-control" name="price" id="price" step="10.00" required>
                                 <div class="invalid-feedback">Please enter a valid price.</div>
                             </div>
                             <small class="form-text text-muted">Prices can be set lower than cost.</small>
@@ -143,6 +143,19 @@
                 background-color: #f8f9fa; /* Light background to match Bootstrap's .table-light */
                 z-index: 1;
                 border-bottom: 1px solid #dee2e6;
+            }
+            
+            /* Remove spinner buttons from number inputs */
+            /* Chrome, Safari, Edge, Opera */
+            input[type=number]::-webkit-outer-spin-button,
+            input[type=number]::-webkit-inner-spin-button {
+                -webkit-appearance: none;
+                margin: 0;
+            }
+            /* Firefox */
+            input[type=number] {
+                -moz-appearance: textfield;
+                appearance: textfield;
             }
         </style>
         <div class="table-responsive job-history-table">

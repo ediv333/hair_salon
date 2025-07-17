@@ -87,7 +87,11 @@
     <!-- Footer -->
     <footer class="text-center">
         <div class="container">
-            <p class="mb-0"> 2025 Anyada Salon | Made with <i class="fas fa-heart text-danger"></i></p>
+            <p class="mb-0"> 2025 Anyada Salon | Made with <i class="fas fa-heart text-danger"></i>
+                <a href="{{ url_for('clean_cookies') }}" class="btn btn-sm btn-outline-secondary ms-2" title="Clear all browser cookies for this site">
+                    <i class="fas fa-cookie-bite"></i> Clean Cookies
+                </a>
+            </p>
         </div>
     </footer>
 

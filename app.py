@@ -693,6 +693,19 @@ def format_thai_baht(amount):
 def serve_data(filename):
     return send_from_directory('data', filename)
 
+@app.route('/clean-cookies')
+def clean_cookies():
+    """Clear all cookies for the application"""
+    response = redirect(url_for('job'))
+    
+    # Get list of cookies and remove each one
+    cookies = request.cookies
+    for key in cookies.keys():
+        response.delete_cookie(key)
+    
+    flash('All cookies have been cleared', 'success')
+    return response
+
 if __name__ == '__main__':
     logger.info('Starting Flask application')
     app.run(host='0.0.0.0', debug=True)
