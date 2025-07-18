@@ -45,8 +45,8 @@
 <form method="POST" style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:32px;">
     <input type="hidden" name="action" value="add">
     <input type="text" name="name" placeholder="Name" required style="padding:8px;border-radius:6px;border:1px solid #ccc;">
-    <input type="number" name="cost" placeholder="Cost" step="0.01" required style="padding:8px;border-radius:6px;border:1px solid #ccc;width:100px;">
-    <input type="number" name="price" placeholder="Price" step="0.01" required style="padding:8px;border-radius:6px;border:1px solid #ccc;width:100px;">
+    <input type="number" name="cost" placeholder="Cost" step="10.0" required style="padding:8px;border-radius:6px;border:1px solid #ccc;width:100px;">
+    <input type="number" name="price" placeholder="Price" step="10.0" required style="padding:8px;border-radius:6px;border:1px solid #ccc;width:100px;">
     <input type="submit" value="Add" style="background:#5a189a;color:#fff;padding:8px 18px;border:none;border-radius:6px;font-weight:600;cursor:pointer;">
 </form>
 
@@ -57,8 +57,8 @@
         <input type="hidden" name="action" value="update">
         <input type="hidden" name="idx" id="updateIdx">
         <input type="text" name="name" id="updateName" placeholder="Name" required style="padding:8px;border-radius:6px;border:1px solid #ccc;">
-        <input type="number" name="cost" id="updateCost" placeholder="Cost" step="0.01" required style="padding:8px;border-radius:6px;border:1px solid #ccc;width:100px;">
-        <input type="number" name="price" id="updatePrice" placeholder="Price" step="0.01" required style="padding:8px;border-radius:6px;border:1px solid #ccc;width:100px;">
+        <input type="number" name="cost" id="updateCost" placeholder="Cost" step="10.0" required style="padding:8px;border-radius:6px;border:1px solid #ccc;width:100px;">
+        <input type="number" name="price" id="updatePrice" placeholder="Price" step="10.0" required style="padding:8px;border-radius:6px;border:1px solid #ccc;width:100px;">
         <input type="submit" value="Update" style="background:#5a189a;color:#fff;padding:8px 18px;border:none;border-radius:6px;font-weight:600;cursor:pointer;">
         <button type="button" onclick="hideUpdate()" style="background:#ccc;color:#222;padding:8px 18px;border:none;border-radius:6px;font-weight:600;cursor:pointer;">Cancel</button>
     </form>

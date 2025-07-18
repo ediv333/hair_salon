@@ -495,47 +495,15 @@ def services():
 def job():
     # Initialize variables that will be used across all code paths
     jobs = []
-    search_customer = request.args.get('search_customer', '').strip().lower()
     
-    # Load jobs data for search results
-    try:
-        jobs_path = get_data_file_path('jobs.csv')
-        if os.path.exists(jobs_path):
-            # Get existing job data
-            jobs_df = pd.read_csv(jobs_path)
-            
-            # Convert price, quantity, and cost columns to numeric values
-            if not jobs_df.empty:
-                for col in ['price', 'quantity', 'cost']:
-                    if col in jobs_df.columns:
-                        jobs_df[col] = pd.to_numeric(jobs_df[col], errors='coerce').fillna(0)
-            
-            # Apply search filter if provided
-            if search_customer:
-                # Filter jobs by customer name containing the search term
-                jobs_df = jobs_df[jobs_df['customer'].str.lower().str.contains(search_customer, na=False)]
-            
-            # Make sure the timestamp column is in datetime format for proper sorting
-            if 'timestamp' in jobs_df.columns:
-                try:
-                    jobs_df['timestamp'] = pd.to_datetime(jobs_df['timestamp'], errors='coerce')
-                except:
-                    pass
-            
-            # Sort by timestamp in descending order (newest first)
-            jobs_df = jobs_df.sort_values(by='timestamp', ascending=False)
-            
-            # Convert to list of dictionaries for the template
-            jobs = jobs_df.to_dict('records')
-    except Exception as e:
-        print(f"Error loading jobs data: {e}")
+    # We've removed history functionality from this route - it's now in the /history route
     
     # Prevent use if services.json or inventory.json is missing
     services_path = get_data_file_path('services.json')
     inventory_path = get_data_file_path('inventory.json')
     if not (os.path.exists(services_path) and os.path.exists(inventory_path)):
         # Remove flash, just render with disable_form
-        return render_template('job.html', disable_form=True, jobs=jobs, search_customer=search_customer)
+        return render_template('job.html', disable_form=True, jobs=[])
 
     _customers = [ {
         "name": "dummy",
@@ -687,6 +655,118 @@ def format_thai_baht(amount):
         return '฿{:,.2f}'.format(float(amount))
     except (ValueError, TypeError):
         return '฿0.00'
+
+@app.route('/history')
+def history():
+    """Display job history with filtering options"""
+    # Get filter parameters
+    date_from = request.args.get('date_from', '')
+    date_to = request.args.get('date_to', '')
+    customer_filter = request.args.get('customer_filter', '').strip().lower()
+    type_filter = request.args.get('type_filter', '')
+    item_filter = request.args.get('item_filter', '').strip().lower()
+    
+    # Store filters for template
+    filters = {
+        'date_from': date_from,
+        'date_to': date_to,
+        'customer_filter': customer_filter,
+        'type_filter': type_filter,
+        'item_filter': item_filter
+    }
+    
+    # Default values
+    jobs = []
+    total_revenue = 0
+    total_profit = 0
+    
+    try:
+        jobs_path = get_data_file_path('jobs.csv')
+        if os.path.exists(jobs_path):
+            # Load jobs data
+            jobs_df = pd.read_csv(jobs_path)
+            
+            # If dataframe is empty, return early
+            if jobs_df.empty:
+                return render_template('history.html', jobs=[], filters=filters, 
+                                      total_revenue='0.00', total_profit='0.00')
+            
+            # Convert columns to appropriate types
+            for col in ['price', 'quantity', 'cost']:
+                if col in jobs_df.columns:
+                    jobs_df[col] = pd.to_numeric(jobs_df[col], errors='coerce').fillna(0)
+            
+            # Parse timestamp and date columns
+            if 'timestamp' in jobs_df.columns:
+                try:
+                    jobs_df['timestamp'] = pd.to_datetime(jobs_df['timestamp'], errors='coerce')
+                except Exception as e:
+                    print(f"Error parsing timestamp: {e}")
+            
+            if 'date' in jobs_df.columns:
+                try:
+                    jobs_df['date'] = pd.to_datetime(jobs_df['date'], errors='coerce')
+                except Exception as e:
+                    print(f"Error parsing date: {e}")
+            
+            # Apply filters
+            # Date range filter
+            if date_from:
+                try:
+                    from_date = pd.to_datetime(date_from)
+                    jobs_df = jobs_df[jobs_df['date'] >= from_date]
+                except Exception as e:
+                    print(f"Error filtering by from_date: {e}")
+            
+            if date_to:
+                try:
+                    to_date = pd.to_datetime(date_to)
+                    jobs_df = jobs_df[jobs_df['date'] <= to_date]
+                except Exception as e:
+                    print(f"Error filtering by to_date: {e}")
+            
+            # Customer name filter
+            if customer_filter:
+                jobs_df = jobs_df[jobs_df['customer'].str.lower().str.contains(customer_filter, na=False)]
+            
+            # Item type filter (service/product)
+            if type_filter:
+                jobs_df = jobs_df[jobs_df['category'] == type_filter]
+            
+            # Item name filter
+            if item_filter:
+                jobs_df = jobs_df[jobs_df['item'].str.lower().str.contains(item_filter, na=False)]
+            
+            # Sort by date, then timestamp (newest first)
+            if 'date' in jobs_df.columns and 'timestamp' in jobs_df.columns:
+                jobs_df = jobs_df.sort_values(by=['date', 'timestamp'], ascending=[False, False])
+            elif 'timestamp' in jobs_df.columns:
+                jobs_df = jobs_df.sort_values(by='timestamp', ascending=False)
+            
+            # Calculate totals
+            if not jobs_df.empty:
+                # Add revenue column
+                jobs_df['revenue'] = jobs_df['price'] * jobs_df['quantity']
+                jobs_df['profit'] = jobs_df['revenue'] - jobs_df['cost']
+                
+                total_revenue = jobs_df['revenue'].sum()
+                total_profit = jobs_df['profit'].sum()
+            
+            # Convert datetime columns back to string format for display
+            if 'date' in jobs_df.columns and pd.api.types.is_datetime64_any_dtype(jobs_df['date']):
+                jobs_df['date'] = jobs_df['date'].dt.strftime('%Y-%m-%d')
+            
+            # Convert to list of dictionaries for the template
+            jobs = jobs_df.to_dict('records')
+    except Exception as e:
+        print(f"Error processing jobs data: {e}")
+    
+    # Format totals for display
+    formatted_revenue = format_thai_baht(total_revenue)
+    formatted_profit = format_thai_baht(total_profit)
+    
+    return render_template('history.html', jobs=jobs, filters=filters, 
+                          total_revenue=formatted_revenue, total_profit=formatted_profit)
 
 # Route to serve files from data directory
 @app.route('/data/<path:filename>')

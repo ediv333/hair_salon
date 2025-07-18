@@ -11,33 +11,34 @@
     {% endif %}
 </form>
 
-<div style="max-width: 1000px; margin: 0 auto;">
+<div style="width: 100%; margin: 0 auto;">
     <!-- Show Inventory Table -->
-    <table style="width:100%;border-collapse:collapse;margin-bottom:32px;">
+    <div style="overflow-x: auto; width: 100%;"> <!-- Add horizontal scrolling container -->
+    <table style="width:100%;min-width:1000px;border-collapse:collapse;margin-bottom:32px;table-layout:fixed;">
         <thead>
             <tr style="background:#e0aaff;">
-                <th style="padding:10px; width:18%; text-align:left;">Name</th>
-                <th style="padding:10px; width:8%; text-align:center;">Initial Qty</th>
-                <th style="padding:10px; width:8%; text-align:center;">Current Qty</th>
-                <th style="padding:10px; width:8%; text-align:center;">Cost</th>
-                <th style="padding:10px; width:10%; text-align:center;">Retail Price</th>
-                <th style="padding:10px; width:8%; text-align:center;">Discount</th>
-                <th style="padding:10px; width:13%; text-align:center;">Last Sell</th>
-                <th style="padding:10px; width:13%; text-align:center;">Purchase Date</th>
-                <th style="padding:10px; width:14%; text-align:center;">Actions</th>
+                <th style="padding:10px; width:18%; text-align:left; height:45px;">Name</th>
+                <th style="padding:10px; width:8%; text-align:center; height:45px;">Initial Qty</th>
+                <th style="padding:10px; width:8%; text-align:center; height:45px;">Current Qty</th>
+                <th style="padding:10px; width:8%; text-align:center; height:45px;">Cost</th>
+                <th style="padding:10px; width:10%; text-align:center; height:45px;">Retail Price</th>
+                <th style="padding:10px; width:8%; text-align:center; height:45px;">Discount</th>
+                <th style="padding:10px; width:13%; text-align:center; height:45px;">Last Sell</th>
+                <th style="padding:10px; width:13%; text-align:center; height:45px;">Purchase Date</th>
+                <th style="padding:10px; width:14%; text-align:center; height:45px;">Actions</th>
             </tr>
         </thead>
         <tbody>
             {% for item in inventory %}
             <tr style="background:#f7f7fa;">
-                <td style="padding:10px; text-align:left;">{{ item.name }}</td>
-                <td style="padding:10px; text-align:center;">{{ item.initial_quantity }}</td>
-                <td style="padding:10px; text-align:center;">{{ item.current_quantity }}</td>
-                <td style="padding:10px; text-align:center;">{{ item.cost }}</td>
-                <td style="padding:10px; text-align:center;">{{ item.retail_price }}</td>
-                <td style="padding:10px; text-align:center;">{{ item.discount }}</td>
-                <td style="padding:10px; text-align:center;">{{ item.last_date_sell }}</td>
-                <td style="padding:10px; text-align:center;">{{ item.date_purchase }}</td>
+                <td style="padding:10px; text-align:left; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ item.name }}</td>
+                <td style="padding:10px; text-align:center; white-space:nowrap;">{{ item.initial_quantity }}</td>
+                <td style="padding:10px; text-align:center; white-space:nowrap;">{{ item.current_quantity }}</td>
+                <td style="padding:10px; text-align:center; white-space:nowrap;">{{ item.cost }}</td>
+                <td style="padding:10px; text-align:center; white-space:nowrap;">{{ item.retail_price }}</td>
+                <td style="padding:10px; text-align:center; white-space:nowrap;">{{ item.discount }}</td>
+                <td style="padding:10px; text-align:center; white-space:nowrap;">{{ item.last_date_sell }}</td>
+                <td style="padding:10px; text-align:center; white-space:nowrap;">{{ item.date_purchase }}</td>
                 <td style="padding:10px; text-align:center;">
                     <button class="update-button" data-idx="{{ loop.index0 }}" data-name="{{ item.name|escape }}" data-initial-quantity="{{ item.initial_quantity|escape }}" data-current-quantity="{{ item.current_quantity|escape }}" data-cost="{{ item.cost|escape }}" data-retail-price="{{ item.retail_price|escape }}" data-discount="{{ item.discount|escape }}" data-last-date-sell="{{ item.last_date_sell|escape }}" data-date-purchase="{{ item.date_purchase|escape }}" style="background:#5a189a;color:#fff;border:none;padding:6px 12px;border-radius:5px;cursor:pointer;margin-bottom:4px;">Update</button>
                     <form method="POST" style="display:inline;">
@@ -50,38 +51,81 @@
             {% endfor %}
         </tbody>
     </table>
+    </div> <!-- Close horizontal scrolling container -->
 
     <!-- Add Inventory Form -->
     <h3 style="color:#5a189a;">Add Inventory Item</h3>
-    <form method="POST" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:32px;font-size:0.85rem;">
+    <form method="POST" style="display:table;width:100%;margin-bottom:32px;font-size:0.85rem;table-layout:fixed;">
         <input type="hidden" name="action" value="add">
-        <input type="text" name="name" placeholder="Name" required style="padding:6px;border-radius:6px;border:1px solid #ccc;font-size:0.85rem;">
-        <input type="number" name="initial_quantity" placeholder="Initial Qty" required style="padding:6px;border-radius:6px;border:1px solid #ccc;width:80px;font-size:0.85rem;">
-        <input type="number" name="current_quantity" placeholder="Current Qty" required style="padding:6px;border-radius:6px;border:1px solid #ccc;width:80px;font-size:0.85rem;">
-        <input type="number" name="cost" placeholder="Cost" step="0.01" required style="padding:6px;border-radius:6px;border:1px solid #ccc;width:70px;font-size:0.85rem;">
-        <input type="number" name="retail_price" placeholder="Retail Price" step="0.01" required style="padding:6px;border-radius:6px;border:1px solid #ccc;width:90px;font-size:0.85rem;">
-        <input type="number" name="discount" placeholder="Discount" step="0.01" style="padding:6px;border-radius:6px;border:1px solid #ccc;width:80px;font-size:0.85rem;">
-        <input type="date" name="last_date_sell" placeholder="Last Sell" style="padding:6px;border-radius:6px;border:1px solid #ccc;width:110px;font-size:0.85rem;">
-        <input type="date" name="date_purchase" placeholder="Purchase Date" style="padding:6px;border-radius:6px;border:1px solid #ccc;width:110px;font-size:0.85rem;">
-        <input type="submit" value="Add" style="background:#5a189a;color:#fff;padding:6px 16px;border:none;border-radius:6px;font-weight:600;cursor:pointer;font-size:0.85rem;">
+        <div style="display:table-row;">
+            <div style="display:table-cell;width:18%;padding:5px;">
+                <input type="text" name="name" placeholder="Name" required style="width:100%;padding:6px;border-radius:6px;border:1px solid #ccc;font-size:0.85rem;">
+            </div>
+            <div style="display:table-cell;width:8%;padding:5px;">
+                <input type="number" name="initial_quantity" placeholder="Initial Qty" required style="width:100%;padding:6px;border-radius:6px;border:1px solid #ccc;font-size:0.85rem;">
+            </div>
+            <div style="display:table-cell;width:8%;padding:5px;">
+                <input type="number" name="current_quantity" placeholder="Current Qty" required style="width:100%;padding:6px;border-radius:6px;border:1px solid #ccc;font-size:0.85rem;">
+            </div>
+            <div style="display:table-cell;width:8%;padding:5px;">
+                <input type="number" name="cost" placeholder="Cost" step="10.0" required style="width:100%;padding:6px;border-radius:6px;border:1px solid #ccc;font-size:0.85rem;">
+            </div>
+            <div style="display:table-cell;width:10%;padding:5px;">
+                <input type="number" name="retail_price" placeholder="Retail Price" step="10.0" required style="width:100%;padding:6px;border-radius:6px;border:1px solid #ccc;font-size:0.85rem;">
+            </div>
+            <div style="display:table-cell;width:8%;padding:5px;">
+                <input type="number" name="discount" placeholder="Discount" step="5" style="width:100%;padding:6px;border-radius:6px;border:1px solid #ccc;font-size:0.85rem;">
+            </div>
+            <div style="display:table-cell;width:13%;padding:5px;">
+                <input type="date" name="last_date_sell" placeholder="Last Sell" style="width:100%;padding:6px;border-radius:6px;border:1px solid #ccc;font-size:0.85rem;">
+            </div>
+            <div style="display:table-cell;width:13%;padding:5px;">
+                <input type="date" name="date_purchase" placeholder="Purchase Date" style="width:100%;padding:6px;border-radius:6px;border:1px solid #ccc;font-size:0.85rem;">
+            </div>
+            <div style="display:table-cell;width:14%;padding:5px;text-align:center;">
+                <input type="submit" value="Add" style="background:#5a189a;color:#fff;padding:6px 16px;border:none;border-radius:6px;font-weight:600;cursor:pointer;font-size:0.85rem;">
+            </div>
+        </div>
     </form>
 
     <!-- Update Inventory Form (hidden by default) -->
     <div id="updateFormDiv" style="display:none;">
         <h3 style="color:#5a189a;">Update Inventory Item</h3>
-        <form method="POST" id="updateForm" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:0.85rem;">
+        <form method="POST" id="updateForm" style="display:table;width:100%;margin-bottom:32px;font-size:0.85rem;table-layout:fixed;">
             <input type="hidden" name="action" value="update">
             <input type="hidden" name="idx" id="updateIdx">
-            <input type="text" name="name" id="updateName" placeholder="Name" required style="padding:6px;border-radius:6px;border:1px solid #ccc;font-size:0.85rem;">
-            <input type="number" name="initial_quantity" id="updateInitialQuantity" placeholder="Initial Qty" required style="padding:6px;border-radius:6px;border:1px solid #ccc;width:80px;font-size:0.85rem;">
-            <input type="number" name="current_quantity" id="updateCurrentQuantity" placeholder="Current Qty" required style="padding:6px;border-radius:6px;border:1px solid #ccc;width:80px;font-size:0.85rem;">
-            <input type="number" name="cost" id="updateCost" placeholder="Cost" step="0.01" required style="padding:6px;border-radius:6px;border:1px solid #ccc;width:70px;font-size:0.85rem;">
-            <input type="number" name="retail_price" id="updateRetailPrice" placeholder="Retail Price" step="0.01" required style="padding:6px;border-radius:6px;border:1px solid #ccc;width:90px;font-size:0.85rem;">
-            <input type="number" name="discount" id="updateDiscount" placeholder="Discount" step="0.01" style="padding:6px;border-radius:6px;border:1px solid #ccc;width:80px;font-size:0.85rem;">
-            <input type="date" name="last_date_sell" id="updateLastDateSell" placeholder="Last Sell" style="padding:6px;border-radius:6px;border:1px solid #ccc;width:110px;font-size:0.85rem;">
-            <input type="date" name="date_purchase" id="updateDatePurchase" placeholder="Purchase Date" style="padding:6px;border-radius:6px;border:1px solid #ccc;width:110px;font-size:0.85rem;">
-            <input type="submit" value="Update" style="background:#5a189a;color:#fff;padding:6px 16px;border:none;border-radius:6px;font-weight:600;cursor:pointer;font-size:0.85rem;">
-            <button type="button" onclick="hideUpdate()" style="background:#ccc;color:#222;padding:6px 16px;border:none;border-radius:6px;font-weight:600;cursor:pointer;font-size:0.85rem;">Cancel</button>
+            <div style="display:table-row;">
+                <div style="display:table-cell;width:18%;padding:5px;">
+                    <input type="text" name="name" id="updateName" placeholder="Name" required style="width:100%;padding:6px;border-radius:6px;border:1px solid #ccc;font-size:0.85rem;">
+                </div>
+                <div style="display:table-cell;width:8%;padding:5px;">
+                    <input type="number" name="initial_quantity" id="updateInitialQuantity" placeholder="Initial Qty" required style="width:100%;padding:6px;border-radius:6px;border:1px solid #ccc;font-size:0.85rem;">
+                </div>
+                <div style="display:table-cell;width:8%;padding:5px;">
+                    <input type="number" name="current_quantity" id="updateCurrentQuantity" placeholder="Current Qty" required style="width:100%;padding:6px;border-radius:6px;border:1px solid #ccc;font-size:0.85rem;">
+                </div>
+                <div style="display:table-cell;width:8%;padding:5px;">
+                    <input type="number" name="cost" id="updateCost" placeholder="Cost" step="10.0" required style="width:100%;padding:6px;border-radius:6px;border:1px solid #ccc;font-size:0.85rem;">
+                </div>
+                <div style="display:table-cell;width:10%;padding:5px;">
+                    <input type="number" name="retail_price" id="updateRetailPrice" placeholder="Retail Price" step="10.0" required style="width:100%;padding:6px;border-radius:6px;border:1px solid #ccc;font-size:0.85rem;">
+                </div>
+                <div style="display:table-cell;width:8%;padding:5px;">
+                    <input type="number" name="discount" id="updateDiscount" placeholder="Discount" step="5" style="width:100%;padding:6px;border-radius:6px;border:1px solid #ccc;font-size:0.85rem;">
+                </div>
+                <div style="display:table-cell;width:13%;padding:5px;">
+                    <input type="date" name="last_date_sell" id="updateLastDateSell" placeholder="Last Sell" style="width:100%;padding:6px;border-radius:6px;border:1px solid #ccc;font-size:0.85rem;">
+                </div>
+                <div style="display:table-cell;width:13%;padding:5px;">
+                    <input type="date" name="date_purchase" id="updateDatePurchase" placeholder="Purchase Date" style="width:100%;padding:6px;border-radius:6px;border:1px solid #ccc;font-size:0.85rem;">
+                </div>
+                <div style="display:table-cell;width:14%;padding:5px;text-align:center;">
+                    <div style="display:flex;gap:5px;justify-content:center;">
+                        <input type="submit" value="Update" style="background:#5a189a;color:#fff;padding:6px 16px;border:none;border-radius:6px;font-weight:600;cursor:pointer;font-size:0.85rem;">
+                        <button type="button" onclick="hideUpdate()" style="background:#ccc;color:#222;padding:6px 16px;border:none;border-radius:6px;font-weight:600;cursor:pointer;font-size:0.85rem;">Cancel</button>
+                    </div>
+                </div>
+            </div>
         </form>
     </div>
 </div>

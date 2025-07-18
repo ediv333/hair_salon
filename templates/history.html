@@ -1,0 +1,202 @@
+{% extends 'layout.html' %}
+{% block content %}
+<div class="row">
+    <div class="col-lg-12 mx-auto">
+        <h2 class="mb-4 text-primary">
+            <i class="fas fa-history me-2"></i> Job History
+        </h2>
+        
+        <!-- Filter Panel -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">
+                    <i class="fas fa-filter me-2"></i> Filter Options
+                </h5>
+            </div>
+            <div class="card-body p-4">
+                <form method="GET" id="filterForm">
+                    <div class="row g-3">
+                        <!-- Date Range -->
+                        <div class="col-md-6">
+                            <label class="form-label">Date Range</label>
+                            <div class="row">
+                                <div class="col-6">
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
+                                        <input type="date" class="form-control" name="date_from" id="date_from" value="{{ filters.date_from }}">
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
+                                        <input type="date" class="form-control" name="date_to" id="date_to" value="{{ filters.date_to }}">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Customer Filter -->
+                        <div class="col-md-6">
+                            <label for="customer_filter" class="form-label">Customer</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-user"></i></span>
+                                <input type="text" class="form-control" name="customer_filter" id="customer_filter" 
+                                       placeholder="Filter by customer name" value="{{ filters.customer_filter }}">
+                            </div>
+                        </div>
+                        
+                        <!-- Item Type Filter -->
+                        <div class="col-md-6">
+                            <label for="type_filter" class="form-label">Item Type</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-tags"></i></span>
+                                <select class="form-select" name="type_filter" id="type_filter">
+                                    <option value="">All Types</option>
+                                    <option value="service" {% if filters.type_filter == 'service' %}selected{% endif %}>Services Only</option>
+                                    <option value="product" {% if filters.type_filter == 'product' %}selected{% endif %}>Products Only</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <!-- Item Name Filter -->
+                        <div class="col-md-6">
+                            <label for="item_filter" class="form-label">Item Name</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-cut"></i></span>
+                                <input type="text" class="form-control" name="item_filter" id="item_filter" 
+                                       placeholder="Filter by item name" value="{{ filters.item_filter }}">
+                            </div>
+                        </div>
+                        
+                        <!-- Filter Buttons -->
+                        <div class="col-12 d-flex justify-content-end mt-3">
+                            <a href="{{ url_for('history') }}" class="btn btn-outline-secondary me-2">
+                                <i class="fas fa-times me-2"></i> Clear Filters
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-filter me-2"></i> Apply Filters
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- History Results -->
+        {% if jobs %}
+        <div class="card shadow-sm">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-list me-2"></i> Results
+                    <span class="badge bg-primary ms-2">{{ jobs|length }} Records</span>
+                </h5>
+                
+                <!-- Totals Summary -->
+                <div>
+                    <span class="badge bg-info">Total Revenue: ฿{{ total_revenue|default('0.00') }}</span>
+                    <span class="badge bg-success ms-2">Total Profit: ฿{{ total_profit|default('0.00') }}</span>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <style>
+                    .history-table {
+                        max-height: 600px;
+                        overflow-y: auto;
+                    }
+                    
+                    /* Make table header sticky when scrolling */
+                    .history-table thead th {
+                        position: sticky;
+                        top: 0;
+                        background-color: #f8f9fa;
+                        z-index: 1;
+                        border-bottom: 1px solid #dee2e6;
+                    }
+                </style>
+                
+                <div class="table-responsive history-table">
+                    <table class="table table-hover table-striped mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Date</th>
+                                <th>Customer</th>
+                                <th>Item</th>
+                                <th>Category</th>
+                                <th class="text-center">Qty</th>
+                                <th class="text-end">Price</th>
+                                <th class="text-end">Total</th>
+                                <th class="text-end">Cost</th>
+                                <th class="text-end">Profit</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for job in jobs %}
+                            <tr>
+                                <td>{{ job.date }}</td>
+                                <td>{{ job.customer }}</td>
+                                <td>{{ job.item }}</td>
+                                <td>
+                                    {% if job.category == 'service' %}
+                                    <span class="badge bg-primary">Service</span>
+                                    {% elif job.category == 'product' %}
+                                    <span class="badge bg-info">Product</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">Unknown</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">{{ job.quantity|int }}</td>
+                                <td class="text-end">฿{{ '%.2f'|format(job.price|float) }}</td>
+                                <td class="text-end">฿{{ '%.2f'|format(job.price|float * job.quantity|int) }}</td>
+                                <td class="text-end">฿{{ '%.2f'|format(job.cost|float) }}</td>
+                                <td class="text-end
+                                    {% set item_profit = job.price|float * job.quantity|int - job.cost|float %}
+                                    {% if item_profit > 0 %}
+                                        text-success
+                                    {% else %}
+                                        text-danger
+                                    {% endif %}
+                                ">
+                                    ฿{{ '%.2f'|format(item_profit) }}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i> No job records found matching your filters. Try adjusting your filters or <a href="{{ url_for('history') }}">view all records</a>.
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Set default date range if not provided
+    if (!document.getElementById('date_to').value) {
+        const today = new Date();
+        document.getElementById('date_to').valueAsDate = today;
+    }
+    
+    if (!document.getElementById('date_from').value) {
+        const oneMonthAgo = new Date();
+        oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+        document.getElementById('date_from').valueAsDate = oneMonthAgo;
+    }
+    
+    // Form validation
+    document.getElementById('filterForm').addEventListener('submit', function(event) {
+        const dateFrom = document.getElementById('date_from').value;
+        const dateTo = document.getElementById('date_to').value;
+        
+        if (dateFrom && dateTo && new Date(dateFrom) > new Date(dateTo)) {
+            event.preventDefault();
+            alert('Start date cannot be after end date');
+        }
+    });
+});
+</script>
+{% endblock %}
