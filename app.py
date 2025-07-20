@@ -183,16 +183,16 @@ def analyst():
             try:
                 # First attempt: Try with the full column set
                 jobs_df = pd.read_csv(jobs_path, header=None, 
-                               names=['timestamp', 'date', 'customer', 'item', 'quantity', 'price', 'cost', 'category'])
-                print("Loaded with 8 columns")
+                               names=['date', 'customer', 'item', 'quantity', 'price', 'cost', 'category'])
+                print("Loaded with 7 columns")
                 
             except Exception as e1:
                 print(f"Error loading with 8 columns: {e1}")
                 try:
                     # Second attempt: Try with just cost
                     jobs_df = pd.read_csv(jobs_path, header=None, 
-                                   names=['timestamp', 'date', 'customer', 'item', 'quantity', 'price', 'cost'])
-                    print("Loaded with 7 columns")
+                                   names=['date', 'customer', 'item', 'quantity', 'price', 'cost'])
+                    print("Loaded with 6 columns")
                     # Add category column
                     jobs_df['category'] = 'unknown'
                     
@@ -201,8 +201,8 @@ def analyst():
                     try:
                         # Third attempt: Try original format
                         jobs_df = pd.read_csv(jobs_path, header=None, 
-                                      names=['timestamp', 'date', 'customer', 'item', 'quantity', 'price'])
-                        print("Loaded with 6 columns")
+                                      names=['date', 'customer', 'item', 'quantity', 'price'])
+                        print("Loaded with 5 columns")
                         # Add missing columns
                         jobs_df['cost'] = 0.0
                         jobs_df['category'] = 'unknown'
@@ -210,7 +210,7 @@ def analyst():
                     except Exception as e3:
                         print(f"Failed to load jobs.csv: {e3}")
                         # Create empty dataframe with needed columns
-                        jobs_df = pd.DataFrame(columns=['timestamp', 'date', 'customer', 'item', 'quantity', 'price', 'cost', 'category'])
+                        jobs_df = pd.DataFrame(columns=['date', 'customer', 'item', 'quantity', 'price', 'cost', 'category'])
             
             # Convert columns to proper types
             if not jobs_df.empty:
@@ -557,11 +557,20 @@ def job():
             # Ensure data directory exists
             data_dir = get_data_path()
             with open(jobs_path, 'w', newline='', encoding='utf-8') as f:
-                csv.writer(f).writerow(['timestamp', 'date', 'customer', 'item', 'quantity', 'price', 'cost', 'category'])
+                csv.writer(f).writerow(['date', 'customer', 'item', 'quantity', 'price', 'cost', 'category'])
 
         # Append the new job
         with open(jobs_path, 'a', newline='', encoding='utf-8') as f:
-            csv.writer(f).writerow([datetime.now().isoformat(), date, customer, item_name, quantity, price, total_cost, item_category])
+            # Format the date in DD/MM/YYYY format to be consistent
+            formatted_date = date
+            try:
+                # Try to parse the date and reformat it
+                parsed_date = pd.to_datetime(date, dayfirst=True)
+                formatted_date = parsed_date.strftime('%d/%m/%Y')
+            except:
+                pass  # Keep the original format if parsing fails
+            
+            csv.writer(f).writerow([formatted_date, customer, item_name, quantity, price, total_cost, item_category])
 
         for item in inventory:
             if item['name'] == item_name:
@@ -578,7 +587,7 @@ def job():
         return redirect(url_for('job'))
 
     # No need to duplicate data in static folder
-    return render_template('job.html', disable_form=False, jobs=jobs, search_customer=search_customer)
+    return render_template('job.html', disable_form=False, jobs=jobs)
 
 @app.route('/inventory', methods=['GET', 'POST'])
 def inventory():
