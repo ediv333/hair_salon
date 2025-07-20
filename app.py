@@ -357,12 +357,76 @@ def analyst():
                           last_updated=last_updated,
                           report_title=report_title)
 
-@app.route('/simulator')
+@app.route('/update_price', methods=['POST'])
+def update_price():
+    """Update price in services.json or inventory.json"""
+    try:
+        # Get JSON data from request
+        data = request.get_json()
+        if not data or 'itemName' not in data or 'newPrice' not in data:
+            return jsonify({'success': False, 'message': 'Invalid data'}), 400
+            
+        item_name = data['itemName']
+        new_price = float(data['newPrice'])
+        
+        # Search for the item in services.json
+        services_path = get_data_file_path('services.json')
+        services_updated = False
+        if os.path.exists(services_path):
+            with open(services_path, 'r', encoding='utf-8') as f:
+                services = json.load(f)
+                
+            # Look for the item in services
+            for service in services:
+                if service.get('name') == item_name:
+                    service['price'] = str(int(new_price))  # Convert to integer string to match format
+                    services_updated = True
+                    break
+            
+            # Save updates if any were made
+            if services_updated:
+                with open(services_path, 'w', encoding='utf-8') as f:
+                    json.dump(services, f, indent=2, ensure_ascii=False)
+                return jsonify({'success': True, 'message': 'Service price updated', 'type': 'service'})
+        
+        # If not found in services, check inventory.json
+        inventory_path = get_data_file_path('inventory.json')
+        if os.path.exists(inventory_path):
+            with open(inventory_path, 'r', encoding='utf-8') as f:
+                inventory = json.load(f)
+                
+            # Look for the item in inventory
+            for item in inventory:
+                if item.get('name') == item_name:
+                    item['retail_price'] = int(new_price)  # Convert to integer
+                    with open(inventory_path, 'w', encoding='utf-8') as f:
+                        json.dump(inventory, f, indent=2, ensure_ascii=False)
+                    return jsonify({'success': True, 'message': 'Inventory price updated', 'type': 'inventory'})
+        
+        return jsonify({'success': False, 'message': 'Item not found in services or inventory'}), 404
+        
+    except Exception as e:
+        print(f"Error updating price: {e}")
+        return jsonify({'success': False, 'message': f'Error: {str(e)}'}), 500
+
+@app.route('/simulator', methods=['GET', 'POST'])
 def simulator():
     """Pricing simulator to help optimize profit based on historical data"""
     # Default values
     items_data = []
     last_updated = datetime.now().strftime('%d %B %Y, %H:%M')
+    summary_stats = {}
+    custom_prices = {}
+    
+    # Process form submission for custom prices
+    if request.method == 'POST':
+        for key, value in request.form.items():
+            if key.startswith('custom_price_') and value.strip():
+                item_name = key.replace('custom_price_', '')
+                try:
+                    custom_prices[item_name] = float(value)
+                except ValueError:
+                    pass
     
     # Use our path utility to get the correct path to the jobs.csv file
     jobs_path = get_data_file_path('jobs.csv')
@@ -377,19 +441,41 @@ def simulator():
                 jobs_df['revenue'] = jobs_df['price'] * jobs_df['quantity']
                 jobs_df['profit'] = jobs_df['revenue'] - (jobs_df['cost'] * jobs_df['quantity'])
                 
+                # Calculate summary statistics
+                summary_stats = {
+                    'avg_price': jobs_df['price'].mean(),
+                    'customer_count': jobs_df['customer'].nunique(),
+                    'most_requested_item': jobs_df.groupby('item')['quantity'].sum().idxmax(),
+                    'most_requested_price': jobs_df[jobs_df['item'] == jobs_df.groupby('item')['quantity'].sum().idxmax()]['price'].mean()
+                }
+                
                 # Group by item
                 item_metrics = jobs_df.groupby('item').agg({
                     'quantity': 'sum',
                     'revenue': 'sum',
                     'profit': 'sum',
                     'price': 'mean',
-                    'cost': 'mean'
+                    'cost': 'mean',
+                    'customer': pd.Series.nunique
                 }).reset_index()
                 
                 # Calculate profit margin and potential optimizations
                 item_metrics['profit_margin'] = (item_metrics['profit'] / item_metrics['revenue'] * 100).round(2)
                 
-                # Calculate potential price increases (5%, 10%, 15%)
+                # Determine suggested price increase percentage based on profit margin
+                def suggest_increase(margin):
+                    if margin < 20:
+                        return 15
+                    elif margin < 35:
+                        return 10
+                    elif margin < 50:
+                        return 5
+                    else:
+                        return 0
+                    
+                item_metrics['suggested_increase'] = item_metrics['profit_margin'].apply(suggest_increase)
+                
+                # Calculate potential price increases (suggested and fixed percentages)
                 for pct in [5, 10, 15]:
                     # New price with increase
                     new_price_col = f'price_{pct}pct'
@@ -407,25 +493,69 @@ def simulator():
                     profit_increase_col = f'profit_increase_{pct}pct'
                     item_metrics[profit_increase_col] = item_metrics[new_profit_col] - item_metrics['profit']
                 
+                # Calculate suggested price and profit based on suggested increase percentage
+                item_metrics['price_suggested'] = item_metrics.apply(
+                    lambda row: row['price'] * (1 + row['suggested_increase']/100), axis=1
+                ).round(0)
+                
+                item_metrics['revenue_suggested'] = item_metrics['quantity'] * item_metrics['price_suggested']
+                item_metrics['profit_suggested'] = item_metrics['revenue_suggested'] - (item_metrics['cost'] * item_metrics['quantity'])
+                item_metrics['profit_increase_suggested'] = item_metrics['profit_suggested'] - item_metrics['profit']
+                
+                # Add custom price and profit calculations
+                item_metrics['custom_price'] = item_metrics['price']
+                for idx, row in item_metrics.iterrows():
+                    if row['item'] in custom_prices:
+                        item_metrics.at[idx, 'custom_price'] = custom_prices[row['item']]
+                
+                item_metrics['custom_price_increase_pct'] = ((item_metrics['custom_price'] / item_metrics['price']) - 1) * 100
+                item_metrics['revenue_custom'] = item_metrics['quantity'] * item_metrics['custom_price']
+                item_metrics['profit_custom'] = item_metrics['revenue_custom'] - (item_metrics['cost'] * item_metrics['quantity'])
+                item_metrics['profit_increase_custom'] = item_metrics['profit_custom'] - item_metrics['profit']
+                
+                # Calculate total profit summary
+                total_current_profit = item_metrics['profit'].sum()
+                total_suggested_profit = item_metrics['profit_suggested'].sum()
+                total_custom_profit = item_metrics['profit_custom'].sum()
+                
                 # Convert to list of dicts for template
                 items_data = item_metrics.to_dict('records')
                 
-                # Sort by potential profit increase (10% scenario)
-                items_data = sorted(items_data, key=lambda x: x.get('profit_increase_10pct', 0), reverse=True)
+                # Sort by potential profit increase (using suggested percentage)
+                items_data = sorted(items_data, key=lambda x: x.get('profit_increase_suggested', 0), reverse=True)
                 
-                # Format currency values for display
+                # Format numeric values for display
                 for item in items_data:
-                    for key in item:
-                        if key in ['price', 'cost'] or 'price_' in key:
+                    # Format currency values
+                    for key in ['price', 'cost', 'price_5pct', 'price_10pct', 'price_15pct', 'price_suggested', 'custom_price']:
+                        if key in item:
                             item[key] = f'฿{item[key]:,.0f}'
-                        elif any(term in key for term in ['revenue', 'profit']):
+                    
+                    for key in item:
+                        if any(term in key for term in ['revenue', 'profit']) and 'pct' not in key:
                             item[key] = f'฿{item[key]:,.2f}'
+                    
+                    # Format percentages
+                    if 'custom_price_increase_pct' in item:
+                        item['custom_price_increase_pct'] = f'{item["custom_price_increase_pct"]:.1f}%'
+                
+                # Format summary statistics
+                summary_stats['avg_price'] = f'฿{summary_stats["avg_price"]:,.0f}'
+                summary_stats['most_requested_price'] = f'฿{summary_stats["most_requested_price"]:,.0f}'
+                summary_stats['total_current_profit'] = f'฿{total_current_profit:,.2f}'
+                summary_stats['total_suggested_profit'] = f'฿{total_suggested_profit:,.2f}'
+                summary_stats['total_custom_profit'] = f'฿{total_custom_profit:,.2f}'
+                summary_stats['suggested_profit_increase'] = f'฿{(total_suggested_profit - total_current_profit):,.2f}'
+                summary_stats['custom_profit_increase'] = f'฿{(total_custom_profit - total_current_profit):,.2f}'
+                summary_stats['suggested_profit_increase_pct'] = f'{((total_suggested_profit - total_current_profit) / total_current_profit * 100) if total_current_profit > 0 else 0:.1f}%'
+                summary_stats['custom_profit_increase_pct'] = f'{((total_custom_profit - total_current_profit) / total_current_profit * 100) if total_current_profit > 0 else 0:.1f}%'
         
         except Exception as e:
             print(f"Error in simulator calculations: {e}")
     
     return render_template('simulator.html', 
                            items_data=items_data,
+                           summary_stats=summary_stats,
                            last_updated=last_updated)
 
 @app.route('/customers', methods=['GET', 'POST'])

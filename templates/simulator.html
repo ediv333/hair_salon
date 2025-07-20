@@ -40,101 +40,69 @@
         </div>
         <div class="card-body">
             <div class="row text-center">
-                {% set total_profit = {'current': 0, 'five': 0, 'ten': 0, 'fifteen': 0} %}
-                {% for item in items_data %}
-                    {% set profit_value = item.profit|replace('฿', '')|replace(',', '')|float %}
-                    {% set profit_5pct = item.profit_5pct|replace('฿', '')|replace(',', '')|float %}
-                    {% set profit_10pct = item.profit_10pct|replace('฿', '')|replace(',', '')|float %}
-                    {% set profit_15pct = item.profit_15pct|replace('฿', '')|replace(',', '')|float %}
-                    
-                    {% if total_profit.update({'current': total_profit.current + profit_value}) %}{% endif %}
-                    {% if total_profit.update({'five': total_profit.five + profit_5pct}) %}{% endif %}
-                    {% if total_profit.update({'ten': total_profit.ten + profit_10pct}) %}{% endif %}
-                    {% if total_profit.update({'fifteen': total_profit.fifteen + profit_15pct}) %}{% endif %}
-                {% endfor %}
-
-                <div class="col-md-3 mb-3">
+                <div class="col-md-4 mb-3">
                     <div class="card border-0 bg-light h-100">
                         <div class="card-body">
-                            <h3 class="display-6 mb-0">
-                                {% if total_profit.current < 0 %}
-                                -฿{{ '{:,.0f}'.format(total_profit.current|abs) }}
-                                {% else %}
-                                ฿{{ '{:,.0f}'.format(total_profit.current) }}
-                                {% endif %}
-                            </h3>
+                            <h3 class="display-6 mb-0">{{ summary_stats.total_current_profit }}</h3>
                             <p class="text-muted">Current Profit</p>
                         </div>
                     </div>
                 </div>
                 
-                <div class="col-md-3 mb-3">
+                <div class="col-md-4 mb-3">
                     <div class="card border-0 bg-light h-100">
                         <div class="card-body">
-                            <h3 class="text-primary display-6 mb-0">
-                                {% if total_profit.five < 0 %}
-                                -฿{{ '{:,.0f}'.format(total_profit.five|abs) }}
+                            <h3 class="text-primary display-6 mb-0">{{ summary_stats.total_suggested_profit }}</h3>
+                            <p class="text-muted">With Suggested Increases</p>
+                            <div class="badge {% if summary_stats.suggested_profit_increase|replace('฿', '')|replace(',', '')|float >= 0 %}bg-success{% else %}bg-danger{% endif %}">
+                                {% if summary_stats.suggested_profit_increase|replace('฿', '')|replace(',', '')|float >= 0 %}
+                                +{{ summary_stats.suggested_profit_increase }}
                                 {% else %}
-                                ฿{{ '{:,.0f}'.format(total_profit.five) }}
+                                {{ summary_stats.suggested_profit_increase }}
                                 {% endif %}
-                            </h3>
-                            <p class="text-muted">With 5% Increase</p>
-                            <div class="badge {% if total_profit.five - total_profit.current >= 0 %}bg-success{% else %}bg-danger{% endif %}">
-                                {% if total_profit.five - total_profit.current >= 0 %}
-                                +{{ '{:,.0f}'.format(total_profit.five - total_profit.current) }}
-                                {% else %}
-                                {{ '{:,.0f}'.format(total_profit.five - total_profit.current) }}
-                                {% endif %}
-                                ({{ '{:.1f}%'.format((total_profit.five - total_profit.current) / total_profit.current * 100) }})
+                                ({{ summary_stats.suggested_profit_increase_pct }})
                             </div>
                         </div>
                     </div>
                 </div>
                 
-                <div class="col-md-3 mb-3">
+                <div class="col-md-4 mb-3">
                     <div class="card border-0 bg-light h-100">
                         <div class="card-body">
-                            <h3 class="text-primary display-6 mb-0">
-                                {% if total_profit.ten < 0 %}
-                                -฿{{ '{:,.0f}'.format(total_profit.ten|abs) }}
-                                {% else %}
-                                ฿{{ '{:,.0f}'.format(total_profit.ten) }}
-                                {% endif %}
-                            </h3>
-                            <p class="text-muted">With 10% Increase</p>
-                            <div class="badge {% if total_profit.ten - total_profit.current >= 0 %}bg-success{% else %}bg-danger{% endif %}">
-                                {% if total_profit.ten - total_profit.current >= 0 %}
-                                +{{ '{:,.0f}'.format(total_profit.ten - total_profit.current) }}
-                                {% else %}
-                                {{ '{:,.0f}'.format(total_profit.ten - total_profit.current) }}
-                                {% endif %}
-                                ({{ '{:.1f}%'.format((total_profit.ten - total_profit.current) / total_profit.current * 100) }})
+                            <h3 class="text-primary display-6 mb-0" id="total-custom-profit">{{ summary_stats.total_custom_profit }}</h3>
+                            <p class="text-muted">With Custom Prices</p>
+                            <div class="badge bg-success" id="custom-profit-badge">
+                                +฿0.00 (0.0%)
                             </div>
                         </div>
                     </div>
                 </div>
-                
-                <div class="col-md-3 mb-3">
-                    <div class="card border-0 bg-light h-100">
-                        <div class="card-body">
-                            <h3 class="text-primary display-6 mb-0">
-                                {% if total_profit.fifteen < 0 %}
-                                -฿{{ '{:,.0f}'.format(total_profit.fifteen|abs) }}
-                                {% else %}
-                                ฿{{ '{:,.0f}'.format(total_profit.fifteen) }}
-                                {% endif %}
-                            </h3>
-                            <p class="text-muted">With 15% Increase</p>
-                            <div class="badge {% if total_profit.fifteen - total_profit.current >= 0 %}bg-success{% else %}bg-danger{% endif %}">
-                                {% if total_profit.fifteen - total_profit.current >= 0 %}
-                                +{{ '{:,.0f}'.format(total_profit.fifteen - total_profit.current) }}
-                                {% else %}
-                                {{ '{:,.0f}'.format(total_profit.fifteen - total_profit.current) }}
-                                {% endif %}
-                                ({{ '{:.1f}%'.format((total_profit.fifteen - total_profit.current) / total_profit.current * 100) }})
-                            </div>
-                        </div>
-                    </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Key Metrics -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-primary bg-opacity-10">
+            <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i> Key Business Metrics</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3 mb-3 text-center">
+                    <h4>{{ summary_stats.avg_price }}</h4>
+                    <p class="text-muted mb-0">Average Price</p>
+                </div>
+                <div class="col-md-3 mb-3 text-center">
+                    <h4>{{ summary_stats.customer_count }}</h4>
+                    <p class="text-muted mb-0">Unique Customers</p>
+                </div>
+                <div class="col-md-3 mb-3 text-center">
+                    <h4>{{ summary_stats.most_requested_item }}</h4>
+                    <p class="text-muted mb-0">Most Popular Service</p>
+                </div>
+                <div class="col-md-3 mb-3 text-center">
+                    <h4>{{ summary_stats.most_requested_price }}</h4>
+                    <p class="text-muted mb-0">Price of Popular Service</p>
                 </div>
             </div>
         </div>
@@ -145,49 +113,78 @@
         <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
             <h5 class="mb-0"><i class="fas fa-table me-2"></i> Item Price Analysis</h5>
             <div>
-                <button class="btn btn-sm btn-outline-primary" type="button" id="toggleColumns">
-                    <i class="fas fa-columns me-1"></i> Toggle Details
+                <button class="btn btn-sm btn-outline-warning" type="button" id="resetCustomPrices">
+                    <i class="fas fa-undo me-1"></i> Reset Custom Prices
                 </button>
             </div>
         </div>
         <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-striped table-hover mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Item</th>
-                            <th>Current Price</th>
-                            <th>Cost</th>
-                            <th>Quantity Sold</th>
-                            <th>Current Profit</th>
-                            <th>Profit Margin</th>
-                            <th class="detail-col">5% Price Increase</th>
-                            <th>Profit (5%)</th>
-                            <th class="detail-col">10% Price Increase</th>
-                            <th>Profit (10%)</th>
-                            <th class="detail-col">15% Price Increase</th>
-                            <th>Profit (15%)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for item in items_data %}
-                        <tr>
-                            <td>{{ item.item }}</td>
-                            <td>{{ item.price }}</td>
-                            <td>{{ item.cost }}</td>
-                            <td>{{ item.quantity }}</td>
-                            <td>{{ item.profit }}</td>
-                            <td>{{ item.profit_margin }}%</td>
-                            <td class="detail-col">{{ item.price_5pct }}</td>
-                            <td><span class="badge rounded-pill bg-success">{{ item.profit_5pct }}</span></td>
-                            <td class="detail-col">{{ item.price_10pct }}</td>
-                            <td><span class="badge rounded-pill bg-success">{{ item.profit_10pct }}</span></td>
-                            <td class="detail-col">{{ item.price_15pct }}</td>
-                            <td><span class="badge rounded-pill bg-success">{{ item.profit_15pct }}</span></td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+            <div>
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Item</th>
+                                <th>Current Price</th>
+                                <th>Cost</th>
+                                <th>Quantity Sold</th>
+                                <th>Current Profit</th>
+                                <th>Profit Margin</th>
+                                <th>Suggested Price</th>
+                                <th>Profit (Suggested)</th>
+                                <th>Custom Price</th>
+                                <th>Custom Profit</th>
+                                <th>Save Price</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in items_data %}
+                            <tr>
+                                <td>{{ item.item }}</td>
+                                <td>{{ item.price }}</td>
+                                <td>{{ item.cost }}</td>
+                                <td>{{ item.quantity }}</td>
+                                <td>{{ item.profit }}</td>
+                                <td>{{ item.profit_margin }}%</td>
+                                <td>
+                                    <span class="badge rounded-pill {% if item.suggested_increase > 0 %}bg-warning{% else %}bg-secondary{% endif %}" 
+                                          data-bs-toggle="tooltip" data-bs-placement="top" 
+                                          title="{% if item.suggested_increase == 15 %}Low profit margin (< 20%). Price increase recommended.{% elif item.suggested_increase == 10 %}Moderate profit margin (20-35%). Small increase recommended.{% elif item.suggested_increase == 5 %}Good profit margin (35-50%). Minimal increase.{% else %}Excellent profit margin (> 50%). No increase needed.{% endif %}">
+                                        {{ item.price_suggested }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge rounded-pill bg-success">{{ item.profit_suggested }}</span>
+                                </td>
+                                <td>
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text">฿</span>
+                                        <input type="number" class="form-control form-control-sm custom-price-input" 
+                                               data-item-index="{{ loop.index0 }}"
+                                               data-original-price="{{ item.price|replace('฿', '')|replace(',', '') }}"
+                                               data-cost="{{ item.cost|replace('฿', '')|replace(',', '') }}"
+                                               data-quantity="{{ item.quantity }}"
+                                               data-profit="{{ item.profit|replace('฿', '')|replace(',', '') }}"
+                                               value="{{ item.custom_price|replace('฿', '')|replace(',', '') }}" 
+                                               min="0" step="10">
+                                    </div>
+                                    <small class="text-muted custom-price-pct">{{ item.custom_price_increase_pct }}</small>
+                                </td>
+                                <td>
+                                    <span class="badge rounded-pill bg-primary custom-profit-badge">{{ item.profit_custom }}</span>
+                                </td>
+                                <td>
+                                    <button type="button" class="btn btn-sm btn-success save-price-btn" 
+                                            data-item-name="{{ item.item }}" 
+                                            data-item-index="{{ loop.index0 }}">
+                                        <i class="fas fa-save"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
@@ -378,19 +375,191 @@
 <!-- JavaScript for page functionality -->
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const toggleColumnsBtn = document.getElementById('toggleColumns');
-        const detailCols = document.querySelectorAll('.detail-col');
+        // Store all item data for calculations
+        const items = [];
+        let initialTotalProfit = 0;
         
-        // Toggle visibility of detail columns
-        toggleColumnsBtn.addEventListener('click', function() {
-            detailCols.forEach(col => {
-                if (col.style.display === 'none') {
-                    col.style.display = '';
-                } else {
-                    col.style.display = 'none';
+        // Initialize items array with data from each row
+        document.querySelectorAll('.custom-price-input').forEach(function(input, index) {
+            // Get exactly the same profit value displayed to the user
+            const profitText = document.querySelectorAll('.custom-profit-badge')[index].textContent;
+            const profitValue = parseFloat(profitText.replace('฿', '').replace(/,/g, ''));
+            
+            items.push({
+                index: index,
+                originalPrice: parseFloat(input.dataset.originalPrice),
+                cost: parseFloat(input.dataset.cost),
+                quantity: parseInt(input.dataset.quantity),
+                profit: profitValue, // Use the exact displayed profit value
+                customPrice: parseFloat(input.value)
+            });
+            
+            initialTotalProfit += profitValue;
+        });
+        
+        // Function to calculate and update custom profits
+        function updateCustomProfits() {
+            let totalCustomProfit = 0;
+            let totalOriginalProfit = 0;
+            
+            items.forEach((item, index) => {
+                // Get current custom price from input
+                const input = document.querySelectorAll('.custom-price-input')[index];
+                const customPrice = parseFloat(input.value) || item.originalPrice;
+                
+                // Calculate custom profit
+                const customRevenue = customPrice * item.quantity;
+                const customProfit = customRevenue - (item.cost * item.quantity);
+                totalCustomProfit += customProfit;
+                totalOriginalProfit += item.profit;
+                
+                // Update custom profit badge
+                const profitBadge = document.querySelectorAll('.custom-profit-badge')[index];
+                profitBadge.textContent = '฿' + customProfit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                
+                // Calculate and update percentage change
+                const pctChange = ((customPrice / item.originalPrice) - 1) * 100;
+                const pctElem = document.querySelectorAll('.custom-price-pct')[index];
+                pctElem.textContent = pctChange.toFixed(1) + '%';
+            });
+            
+            // Update total custom profit
+            const totalProfitElem = document.getElementById('total-custom-profit');
+            if (totalProfitElem) {
+                // Format with consistent precision
+                totalProfitElem.textContent = '฿' + totalCustomProfit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            }
+            
+            // Update profit increase badge
+            const profitBadge = document.getElementById('custom-profit-badge');
+            if (profitBadge) {
+                const profitIncrease = totalCustomProfit - totalOriginalProfit;
+                const profitIncreasePct = totalOriginalProfit !== 0 ? (profitIncrease / totalOriginalProfit) * 100 : 0;
+                const badgeText = (profitIncrease >= 0 ? '+' : '') + '฿' + Math.abs(profitIncrease).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + 
+                                ' (' + profitIncreasePct.toFixed(1) + '%)';
+                
+                profitBadge.className = 'badge ' + (profitIncrease >= 0 ? 'bg-success' : 'bg-danger');
+                profitBadge.textContent = badgeText;
+            }
+        }
+        
+        // Listen for changes to custom price inputs
+        document.querySelectorAll('.custom-price-input').forEach(input => {
+            input.addEventListener('input', updateCustomProfits);
+        });
+        
+        // Reset custom prices to original prices
+        const resetBtn = document.getElementById('resetCustomPrices');
+        if (resetBtn) {
+            resetBtn.addEventListener('click', function() {
+                items.forEach((item, index) => {
+                    document.querySelectorAll('.custom-price-input')[index].value = item.originalPrice;
+                });
+                updateCustomProfits();
+            });
+        }
+        
+        // Save price to services.json or inventory.json
+        document.querySelectorAll('.save-price-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const itemName = this.dataset.itemName;
+                const itemIndex = parseInt(this.dataset.itemIndex);
+                const priceInput = document.querySelectorAll('.custom-price-input')[itemIndex];
+                const newPrice = parseFloat(priceInput.value);
+                
+                if (isNaN(newPrice) || newPrice <= 0) {
+                    alert('Please enter a valid price greater than zero.');
+                    return;
                 }
+                
+                // Show saving indicator
+                const originalText = button.innerHTML;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                button.disabled = true;
+                
+                // Send AJAX request to update the price
+                fetch('/update_price', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        itemName: itemName,
+                        newPrice: newPrice
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Show success indicator
+                        button.innerHTML = '<i class="fas fa-check"></i>';
+                        button.classList.remove('btn-success');
+                        button.classList.add('btn-outline-success');
+                        
+                        // Show toast notification
+                        const toast = document.createElement('div');
+                        toast.className = 'position-fixed bottom-0 end-0 p-3';
+                        toast.style.zIndex = '5';
+                        toast.innerHTML = `
+                            <div class="toast show" role="alert" aria-live="assertive" aria-atomic="true">
+                                <div class="toast-header bg-success text-white">
+                                    <strong class="me-auto">Price Updated</strong>
+                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+                                </div>
+                                <div class="toast-body">
+                                    Price for <strong>${itemName}</strong> has been updated to <strong>฿${newPrice}</strong> in ${data.type} database.
+                                </div>
+                            </div>
+                        `;
+                        document.body.appendChild(toast);
+                        
+                        // Remove the toast after 3 seconds
+                        setTimeout(() => {
+                            toast.remove();
+                            // Reset button state
+                            button.innerHTML = originalText;
+                            button.classList.remove('btn-outline-success');
+                            button.classList.add('btn-success');
+                            button.disabled = false;
+                        }, 3000);
+                        
+                        // Update the original price in our items array
+                        items[itemIndex].originalPrice = newPrice;
+                    } else {
+                        // Show error
+                        alert('Error: ' + data.message);
+                        button.innerHTML = originalText;
+                        button.disabled = false;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while saving the price.');
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                });
             });
         });
+        
+        // No toggle functionality needed
+        
+        // Initialize tooltips
+        const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+        const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
+        
+        // For the initial state, set custom profit equal to current profit
+        const totalProfitElem = document.getElementById('total-custom-profit');
+        const currentProfitElem = document.querySelector('.col-md-4:first-child .display-6');
+        if (totalProfitElem && currentProfitElem) {
+            totalProfitElem.textContent = currentProfitElem.textContent;
+        }
+        
+        // Update badge to show no change initially
+        const profitBadge = document.getElementById('custom-profit-badge');
+        if (profitBadge) {
+            profitBadge.className = 'badge bg-secondary';
+            profitBadge.textContent = '±฿0.00 (0.0%)';
+        }
     });
 </script>
 {% endblock %}
