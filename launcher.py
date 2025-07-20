@@ -106,7 +106,7 @@ def close_browser_tabs():
         # This is a PowerShell command that closes Chrome tabs matching the pattern
         # It will work for Chrome, Edge, and other Chromium-based browsers
         ps_command = """
-        $pattern = "*127.0.0.1:500*"
+        $pattern = "*127.0.0.1:5000*"
         
         # Try for Edge
         try {
@@ -135,7 +135,7 @@ def close_browser_tabs():
         
         # Execute PowerShell command
         subprocess.run(["powershell", "-Command", ps_command], capture_output=True, text=True)
-        print("Closed browser tabs containing 127.0.0.1:500")
+        print("Closed browser tabs containing 127.0.0.1:5000")
     except Exception as e:
         print(f"Error closing browser tabs: {e}")
 
@@ -255,7 +255,7 @@ def run_app():
     try:
         print("Starting app.py...")
         # Start app.py in a new process and detach it
-        subprocess.Popen([sys.executable, " python app.py"], creationflags=subprocess.CREATE_NEW_CONSOLE)
+        subprocess.Popen([sys.executable, "app.py"], creationflags=subprocess.CREATE_NEW_CONSOLE)
  
         # Open browser after a short delay
         threading.Thread(target=lambda: (time.sleep(2), webbrowser.open('http://127.0.0.1:5000/'))).start()
