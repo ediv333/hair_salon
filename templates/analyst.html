@@ -1,104 +1,315 @@
 {% extends 'layout.html' %}
 {% block content %}
-<!-- Dashboard Header with modern styling -->
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="text-primary d-flex align-items-center mb-0">
-        <i class="fas fa-chart-pie me-2"></i> Analytics Dashboard
-    </h2>
-    <span class="text-muted small">
-        <i class="far fa-clock me-1"></i> Last updated: {{ last_updated|default('N/A') }}
-    </span>
+<!-- Modern Dashboard Header -->
+<div class="container-fluid px-0">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center p-4 bg-gradient-primary rounded-3 text-white shadow-lg">
+                <div>
+                    <h1 class="mb-1 fw-bold">
+                        <i class="fas fa-chart-line me-3"></i>Analytics Dashboard
+                    </h1>
+                    <p class="mb-0 opacity-75">Comprehensive business insights and performance metrics</p>
+                </div>
+                <div class="text-end">
+                    <div class="badge bg-light text-primary px-3 py-2">
+                        <i class="far fa-clock me-1"></i> {{ last_updated|default('N/A') }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
-<!-- Custom CSS for Analytics Page -->
+<!-- Modern CSS for Analytics Page -->
 <style>
-    /* Card border styles */
-    .border-left-primary {
-        border-left: 4px solid #4e73df;
+    /* Gradient backgrounds */
+    .bg-gradient-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     }
-    .border-left-success {
-        border-left: 4px solid #1cc88a;
+    .bg-gradient-success {
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
     }
-    .border-left-info {
-        border-left: 4px solid #36b9cc;
+    .bg-gradient-info {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     }
-    .border-left-danger {
-        border-left: 4px solid #e74a3b;
+    .bg-gradient-warning {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
     }
-    
-    /* Text styles */
-    .text-xs {
-        font-size: 0.7rem;
-    }
-    .text-gray-300 {
-        color: #dddfeb;
+    .bg-gradient-danger {
+        background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
     }
     
-    /* Make sure chart container has proper size */
+    /* Modern card styles */
+    .analytics-card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+        overflow: hidden;
+        position: relative;
+    }
+    
+    .analytics-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+    }
+    
+    .analytics-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: var(--gradient);
+    }
+    
+    .analytics-card.primary::before {
+        background: linear-gradient(90deg, #667eea, #764ba2);
+    }
+    .analytics-card.success::before {
+        background: linear-gradient(90deg, #11998e, #38ef7d);
+    }
+    .analytics-card.info::before {
+        background: linear-gradient(90deg, #36b9cc, #667eea);
+    }
+    .analytics-card.warning::before {
+        background: linear-gradient(90deg, #f093fb, #f5576c);
+    }
+    .analytics-card.danger::before {
+        background: linear-gradient(90deg, #ff9a9e, #fecfef);
+    }
+    
+    /* Card content styling */
+    .card-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin: 0;
+        color: #2c3e50;
+    }
+    
+    .card-label {
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #7f8c8d;
+        margin-bottom: 8px;
+    }
+    
+    .card-icon {
+        font-size: 3rem;
+        opacity: 0.15;
+        color: #2c3e50;
+    }
+    
+    /* Section headers */
+    .section-header {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 2rem;
+        position: relative;
+        padding-left: 20px;
+    }
+    
+    .section-header::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 4px;
+        height: 30px;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        border-radius: 2px;
+    }
+    
+    /* Chart container */
     .chart-container {
         min-height: 450px;
+        border-radius: 15px;
+        background: white;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
     }
     
-    /* Card customizations */
-    .card {
-        transition: transform 0.2s ease-in-out;
-    }
-    .card:hover {
-        transform: translateY(-5px);
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .card-value {
+            font-size: 2rem;
+        }
+        .card-icon {
+            font-size: 2.5rem;
+        }
     }
 </style>
 
-<!-- Overview Cards Row -->
-<div class="row mb-4">
-    <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card border-left-primary h-100 py-2 shadow-sm">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total Revenue</div>
-                        <div class="h3 mb-0 font-weight-bold">{{ total_revenue|default('฿0.00') }}</div>
+<!-- Financial Overview Section -->
+<div class="section-header">
+    <i class="fas fa-chart-bar me-2"></i>Financial Overview
+</div>
+
+<div class="row mb-5">
+    <div class="col-xl-4 col-md-6 mb-4">
+        <div class="card analytics-card primary h-100">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="card-label">Total Revenue</div>
+                        <div class="card-value">{{ total_revenue|default('฿0.00') }}</div>
                     </div>
-                    <div class="col-auto">
-                        <i class="fas fa-money-bill-wave fa-2x text-gray-300"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card border-left-danger h-100 py-2 shadow-sm">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Total Cost</div>
-                        <div class="h3 mb-0 font-weight-bold">{{ total_cost|default('฿0.00') }}</div>
-                    </div>
-                    <div class="col-auto">
-                        <i class="fas fa-tag fa-2x text-gray-300"></i>
+                    <div>
+                        <i class="fas fa-money-bill-wave card-icon"></i>
                     </div>
                 </div>
             </div>
         </div>
     </div>
     
-    <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card border-left-success h-100 py-2 shadow-sm">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Net Profit</div>
-                        <div class="h3 mb-0 font-weight-bold">{{ net_profit|default('฿0.00') }}</div>
+    <div class="col-xl-4 col-md-6 mb-4">
+        <div class="card analytics-card danger h-100">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="card-label">Total Cost</div>
+                        <div class="card-value">{{ total_cost|default('฿0.00') }}</div>
                     </div>
-                    <div class="col-auto">
-                        <i class="fas fa-chart-line fa-2x text-gray-300"></i>
+                    <div>
+                        <i class="fas fa-receipt card-icon"></i>
                     </div>
                 </div>
             </div>
         </div>
     </div>
     
-    <!-- Services vs Products section removed -->
+    <div class="col-xl-4 col-md-6 mb-4">
+        <div class="card analytics-card success h-100">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="card-label">Net Profit</div>
+                        <div class="card-value">{{ net_profit|default('฿0.00') }}</div>
+                    </div>
+                    <div>
+                        <i class="fas fa-chart-line card-icon"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Business Insights Section -->
+<div class="section-header">
+    <i class="fas fa-lightbulb me-2"></i>Business Insights
+</div>
+
+<div class="row mb-5">
+    <div class="col-xl-4 col-md-6 mb-4">
+        <div class="card analytics-card info h-100">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="card-label">Customer Amount</div>
+                        <div class="card-value">{{ customer_count|default('0') }}</div>
+                    </div>
+                    <div>
+                        <i class="fas fa-users card-icon"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-4 col-md-6 mb-4">
+        <div class="card analytics-card primary h-100">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="card-label">Average Price</div>
+                        <div class="card-value">{{ average_price|default('฿0.00') }}</div>
+                    </div>
+                    <div>
+                        <i class="fas fa-calculator card-icon"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-4 col-md-6 mb-4">
+        <div class="card analytics-card success h-100">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="card-label">Best Profit</div>
+                        <div class="card-value text-truncate" style="font-size: 1.8rem;" title="{{ best_profit_item|default('N/A') }}">{{ best_profit_item|default('N/A') }}</div>
+                        <div class="text-muted small">{{ best_profit_amount|default('฿0.00') }}</div>
+                    </div>
+                    <div>
+                        <i class="fas fa-crown card-icon"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+</div>
+
+<!-- Growth Analytics Section -->
+<div class="section-header">
+    <i class="fas fa-chart-line me-2"></i>Growth Analytics
+</div>
+
+<div class="row mb-5">
+    <div class="col-xl-4 col-md-6 mb-4">
+        <div class="card analytics-card info h-100">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="card-label">Customer Growth</div>
+                        <div class="card-value">{{ customer_growth_rate|default('0.0%') }}</div>
+                    </div>
+                    <div>
+                        <i class="fas fa-user-plus card-icon"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-4 col-md-6 mb-4">
+        <div class="card analytics-card success h-100">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="card-label">Service Growth</div>
+                        <div class="card-value">{{ service_growth_rate|default('0.0%') }}</div>
+                    </div>
+                    <div>
+                        <i class="fas fa-cut card-icon"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-4 col-md-6 mb-4">
+        <div class="card analytics-card warning h-100">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="card-label">Product Growth</div>
+                        <div class="card-value">{{ product_growth_rate|default('0.0%') }}</div>
+                    </div>
+                    <div>
+                        <i class="fas fa-box card-icon"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- Category Metrics Row removed -->

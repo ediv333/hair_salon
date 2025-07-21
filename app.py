@@ -171,6 +171,15 @@ def analyst():
     last_updated = datetime.now().strftime('%d %B %Y, %H:%M')
     report_title = 'Sales Analysis'
     
+    # Default values for additional metrics
+    customer_count = 0
+    average_price = 0
+    best_profit_item = "N/A"
+    best_profit_amount = 0
+    customer_growth_rate = 0
+    service_growth_rate = 0
+    product_growth_rate = 0
+    
     # Load jobs data if available
     jobs_path = get_data_file_path('jobs.csv')
     if os.path.exists(jobs_path):
@@ -179,38 +188,17 @@ def analyst():
             # Debug info
             print(f"Jobs CSV exists: {os.path.exists(jobs_path)}")
             
-            # Try to load jobs.csv with different approaches
+            # Load jobs.csv with proper header handling
             try:
-                # First attempt: Try with the full column set
-                jobs_df = pd.read_csv(jobs_path, header=None, 
-                               names=['date', 'customer', 'item', 'quantity', 'price', 'cost', 'category'])
-                print("Loaded with 7 columns")
+                # Load CSV with header row (not treating header as data)
+                jobs_df = pd.read_csv(jobs_path)
+                print(f"Loaded CSV with columns: {jobs_df.columns.tolist()}")
+                print(f"Data shape: {jobs_df.shape}")
                 
-            except Exception as e1:
-                print(f"Error loading with 8 columns: {e1}")
-                try:
-                    # Second attempt: Try with just cost
-                    jobs_df = pd.read_csv(jobs_path, header=None, 
-                                   names=['date', 'customer', 'item', 'quantity', 'price', 'cost'])
-                    print("Loaded with 6 columns")
-                    # Add category column
-                    jobs_df['category'] = 'unknown'
-                    
-                except Exception as e2:
-                    print(f"Error loading with 7 columns: {e2}")
-                    try:
-                        # Third attempt: Try original format
-                        jobs_df = pd.read_csv(jobs_path, header=None, 
-                                      names=['date', 'customer', 'item', 'quantity', 'price'])
-                        print("Loaded with 5 columns")
-                        # Add missing columns
-                        jobs_df['cost'] = 0.0
-                        jobs_df['category'] = 'unknown'
-                        
-                    except Exception as e3:
-                        print(f"Failed to load jobs.csv: {e3}")
-                        # Create empty dataframe with needed columns
-                        jobs_df = pd.DataFrame(columns=['date', 'customer', 'item', 'quantity', 'price', 'cost', 'category'])
+            except Exception as e:
+                print(f"Error loading jobs.csv: {e}")
+                # Create empty dataframe with needed columns
+                jobs_df = pd.DataFrame(columns=['date', 'customer', 'item', 'quantity', 'price', 'cost', 'category'])
             
             # Convert columns to proper types
             if not jobs_df.empty:
@@ -257,17 +245,25 @@ def analyst():
                         # Calculate revenue (price * quantity)
                         jobs_df['revenue'] = jobs_df['price'] * jobs_df['quantity']
                         
-                        # Calculate profit (revenue - cost)
-                        if 'cost' in jobs_df.columns:
-                            jobs_df['profit'] = jobs_df['revenue'] - jobs_df['cost']
+                        # Use total_profit from CSV if available, otherwise calculate it
+                        if 'total_profit' in jobs_df.columns:
+                            jobs_df['profit'] = jobs_df['total_profit']
+                        elif 'cost' in jobs_df.columns:
+                            # Calculate profit: (price - cost) * quantity (cost is unit cost)
+                            jobs_df['profit'] = (jobs_df['price'] - jobs_df['cost']) * jobs_df['quantity']
                         else:
-                            jobs_df['cost'] = 0
                             jobs_df['profit'] = jobs_df['revenue']
+                        
+                        # Calculate total cost for summary (unit cost * quantity)
+                        if 'cost' in jobs_df.columns:
+                            jobs_df['total_cost'] = jobs_df['cost'] * jobs_df['quantity']
+                        else:
+                            jobs_df['total_cost'] = 0
                         
                         # Calculate summary metrics
                         total_revenue = jobs_df['revenue'].sum()
-                        total_cost = jobs_df['cost'].sum() if 'cost' in jobs_df.columns else 0
-                        net_profit = total_revenue - total_cost
+                        total_cost = jobs_df['total_cost'].sum() if 'total_cost' in jobs_df.columns else 0
+                        net_profit = jobs_df['profit'].sum()
                     else:
                         print(f"Missing required columns. Available columns: {jobs_df.columns.tolist()}")
                         total_revenue = total_cost = net_profit = 0
@@ -302,6 +298,70 @@ def analyst():
                         print(f"Error in category calculations: {cat_error}")
                 else:
                     print("Missing category or revenue columns for category analysis")
+                
+                # Calculate additional analytics metrics
+                customer_count = 0
+                average_price = 0
+                best_profit_item = "N/A"
+                best_profit_amount = 0
+                customer_growth_rate = 0
+                service_growth_rate = 0
+                product_growth_rate = 0
+                
+                try:
+                    # Customer count - unique customers (debug the count)
+                    if 'customer' in jobs_df.columns:
+                        unique_customers = jobs_df['customer'].dropna().unique()
+                        customer_count = len(unique_customers)
+                        print(f"Debug: Unique customers found: {unique_customers}")
+                        print(f"Debug: Customer count: {customer_count}")
+                    
+                    # Average price per transaction
+                    if 'price' in jobs_df.columns and not jobs_df.empty:
+                        average_price = jobs_df['price'].mean()
+                    
+                    # Best profit item
+                    if 'item' in jobs_df.columns and 'profit' in jobs_df.columns:
+                        item_profits = jobs_df.groupby('item')['profit'].sum().sort_values(ascending=False)
+                        if not item_profits.empty:
+                            best_profit_item = item_profits.index[0]
+                            best_profit_amount = item_profits.iloc[0]
+                    
+                    # Calculate growth rates (simplified - comparing current period vs previous)
+                    # For now, we'll calculate based on available data trends
+                    # This is a basic implementation - in a real scenario, you'd compare time periods
+                    
+                    if 'date' in jobs_df.columns and not jobs_df.empty:
+                        # Sort by date to analyze trends
+                        jobs_df_sorted = jobs_df.sort_values('date')
+                        
+                        # For growth rates, we'll use a simple approach:
+                        # Compare first half vs second half of data
+                        mid_point = len(jobs_df_sorted) // 2
+                        if mid_point > 0:
+                            first_half = jobs_df_sorted.iloc[:mid_point]
+                            second_half = jobs_df_sorted.iloc[mid_point:]
+                            
+                            # Customer growth rate
+                            first_customers = first_half['customer'].nunique() if not first_half.empty else 0
+                            second_customers = second_half['customer'].nunique() if not second_half.empty else 0
+                            if first_customers > 0:
+                                customer_growth_rate = ((second_customers - first_customers) / first_customers) * 100
+                            
+                            # Service growth rate (by revenue)
+                            first_service_revenue = first_half[first_half['category'] == 'service']['revenue'].sum() if not first_half.empty else 0
+                            second_service_revenue = second_half[second_half['category'] == 'service']['revenue'].sum() if not second_half.empty else 0
+                            if first_service_revenue > 0:
+                                service_growth_rate = ((second_service_revenue - first_service_revenue) / first_service_revenue) * 100
+                            
+                            # Product growth rate (by revenue)
+                            first_product_revenue = first_half[first_half['category'] == 'product']['revenue'].sum() if not first_half.empty else 0
+                            second_product_revenue = second_half[second_half['category'] == 'product']['revenue'].sum() if not second_half.empty else 0
+                            if first_product_revenue > 0:
+                                product_growth_rate = ((second_product_revenue - first_product_revenue) / first_product_revenue) * 100
+                            
+                except Exception as metrics_error:
+                    print(f"Error calculating additional metrics: {metrics_error}")
             
             # Import all chart generation functions
             from utils.graph_utils import (generate_daily_revenue_chart, generate_item_profit_chart, 
@@ -354,6 +414,13 @@ def analyst():
                           product_profit=formatted_product_profit,
                           service_percentage=f"{service_percentage:.1f}%",
                           product_percentage=f"{product_percentage:.1f}%",
+                          customer_count=customer_count,
+                          average_price=format_thai_baht(average_price),
+                          best_profit_item=best_profit_item,
+                          best_profit_amount=format_thai_baht(best_profit_amount),
+                          customer_growth_rate=f"{customer_growth_rate:.1f}%",
+                          service_growth_rate=f"{service_growth_rate:.1f}%",
+                          product_growth_rate=f"{product_growth_rate:.1f}%",
                           last_updated=last_updated,
                           report_title=report_title)
 
@@ -439,7 +506,13 @@ def simulator():
             if all(col in jobs_df.columns for col in ['item', 'quantity', 'price', 'cost']):
                 # Calculate current metrics
                 jobs_df['revenue'] = jobs_df['price'] * jobs_df['quantity']
-                jobs_df['profit'] = jobs_df['revenue'] - (jobs_df['cost'] * jobs_df['quantity'])
+                
+                # Use total_profit from CSV if available, otherwise calculate it
+                if 'total_profit' in jobs_df.columns:
+                    jobs_df['profit'] = jobs_df['total_profit']
+                else:
+                    # Calculate profit: (price - cost) * quantity (cost is unit cost)
+                    jobs_df['profit'] = (jobs_df['price'] - jobs_df['cost']) * jobs_df['quantity']
                 
                 # Calculate summary statistics
                 summary_stats = {
@@ -508,10 +581,16 @@ def simulator():
                     if row['item'] in custom_prices:
                         item_metrics.at[idx, 'custom_price'] = custom_prices[row['item']]
                 
+                # Calculate custom profit metrics
                 item_metrics['custom_price_increase_pct'] = ((item_metrics['custom_price'] / item_metrics['price']) - 1) * 100
                 item_metrics['revenue_custom'] = item_metrics['quantity'] * item_metrics['custom_price']
                 item_metrics['profit_custom'] = item_metrics['revenue_custom'] - (item_metrics['cost'] * item_metrics['quantity'])
                 item_metrics['profit_increase_custom'] = item_metrics['profit_custom'] - item_metrics['profit']
+                
+                # Calculate custom profit margin: (Custom Profit / Custom Revenue) * 100
+                item_metrics['custom_profit_margin'] = (item_metrics['profit_custom'] / item_metrics['revenue_custom'] * 100).round(2)
+                # Handle division by zero
+                item_metrics['custom_profit_margin'] = item_metrics['custom_profit_margin'].fillna(0)
                 
                 # Calculate total profit summary
                 total_current_profit = item_metrics['profit'].sum()
@@ -801,9 +880,9 @@ def history():
     # Get filter parameters
     date_from = request.args.get('date_from', '')
     date_to = request.args.get('date_to', '')
-    customer_filter = request.args.get('customer_filter', '').strip().lower()
+    customer_filter = request.args.get('customer_filter', '').strip()
     type_filter = request.args.get('type_filter', '')
-    item_filter = request.args.get('item_filter', '').strip().lower()
+    item_filter = request.args.get('item_filter', '').strip()
     
     # Store filters for template
     filters = {
@@ -818,6 +897,9 @@ def history():
     jobs = []
     total_revenue = 0
     total_profit = 0
+    available_customers = []
+    available_items = []
+    items_by_category = {'service': [], 'product': []}
     
     try:
         jobs_path = get_data_file_path('jobs.csv')
@@ -830,18 +912,25 @@ def history():
                 return render_template('history.html', jobs=[], filters=filters, 
                                       total_revenue='0.00', total_profit='0.00')
             
+            # Gather unique customers and items for dropdown menus (before applying filters)
+            if 'customer' in jobs_df.columns:
+                available_customers = sorted(jobs_df['customer'].dropna().unique().tolist())
+            if 'item' in jobs_df.columns:
+                available_items = sorted(jobs_df['item'].dropna().unique().tolist())
+            
+            # Organize items by category for dynamic filtering
+            items_by_category = {'service': [], 'product': []}
+            if 'item' in jobs_df.columns and 'category' in jobs_df.columns:
+                for category in ['service', 'product']:
+                    category_items = jobs_df[jobs_df['category'] == category]['item'].dropna().unique().tolist()
+                    items_by_category[category] = sorted(category_items)
+            
             # Convert columns to appropriate types
             for col in ['price', 'quantity', 'cost']:
                 if col in jobs_df.columns:
                     jobs_df[col] = pd.to_numeric(jobs_df[col], errors='coerce').fillna(0)
             
-            # Parse timestamp and date columns
-            if 'timestamp' in jobs_df.columns:
-                try:
-                    jobs_df['timestamp'] = pd.to_datetime(jobs_df['timestamp'], errors='coerce')
-                except Exception as e:
-                    print(f"Error parsing timestamp: {e}")
-            
+            # Parse date column
             if 'date' in jobs_df.columns:
                 try:
                     jobs_df['date'] = pd.to_datetime(jobs_df['date'], errors='coerce')
@@ -864,36 +953,45 @@ def history():
                 except Exception as e:
                     print(f"Error filtering by to_date: {e}")
             
-            # Customer name filter
+            # Customer name filter (exact match for dropdown)
             if customer_filter:
-                jobs_df = jobs_df[jobs_df['customer'].str.lower().str.contains(customer_filter, na=False)]
+                jobs_df = jobs_df[jobs_df['customer'] == customer_filter]
             
             # Item type filter (service/product)
             if type_filter:
                 jobs_df = jobs_df[jobs_df['category'] == type_filter]
             
-            # Item name filter
+            # Item name filter (exact match for dropdown)
             if item_filter:
-                jobs_df = jobs_df[jobs_df['item'].str.lower().str.contains(item_filter, na=False)]
+                jobs_df = jobs_df[jobs_df['item'] == item_filter]
             
-            # Sort by date, then timestamp (newest first)
-            if 'date' in jobs_df.columns and 'timestamp' in jobs_df.columns:
-                jobs_df = jobs_df.sort_values(by=['date', 'timestamp'], ascending=[False, False])
-            elif 'timestamp' in jobs_df.columns:
-                jobs_df = jobs_df.sort_values(by='timestamp', ascending=False)
+            # Sort by date (newest first)
+            if 'date' in jobs_df.columns:
+                jobs_df = jobs_df.sort_values(by='date', ascending=False)
             
             # Calculate totals
             if not jobs_df.empty:
                 # Add revenue column
                 jobs_df['revenue'] = jobs_df['price'] * jobs_df['quantity']
-                jobs_df['profit'] = jobs_df['revenue'] - jobs_df['cost']
+                
+                # Use total_profit from CSV if available, otherwise calculate it
+                if 'total_profit' in jobs_df.columns:
+                    jobs_df['profit'] = jobs_df['total_profit']
+                else:
+                    # Calculate profit: (price - cost) * quantity (cost is unit cost)
+                    jobs_df['profit'] = (jobs_df['price'] - jobs_df['cost']) * jobs_df['quantity']
                 
                 total_revenue = jobs_df['revenue'].sum()
                 total_profit = jobs_df['profit'].sum()
             
             # Convert datetime columns back to string format for display
-            if 'date' in jobs_df.columns and pd.api.types.is_datetime64_any_dtype(jobs_df['date']):
-                jobs_df['date'] = jobs_df['date'].dt.strftime('%Y-%m-%d')
+            if 'date' in jobs_df.columns:
+                if pd.api.types.is_datetime64_any_dtype(jobs_df['date']):
+                    # Handle NaT (Not a Time) values by replacing with empty string
+                    jobs_df['date'] = jobs_df['date'].dt.strftime('%Y-%m-%d').fillna('')
+                else:
+                    # If not datetime, ensure no NaN values are displayed
+                    jobs_df['date'] = jobs_df['date'].fillna('')
             
             # Convert to list of dictionaries for the template
             jobs = jobs_df.to_dict('records')
@@ -905,7 +1003,9 @@ def history():
     formatted_profit = format_thai_baht(total_profit)
     
     return render_template('history.html', jobs=jobs, filters=filters, 
-                          total_revenue=formatted_revenue, total_profit=formatted_profit)
+                          total_revenue=formatted_revenue, total_profit=formatted_profit,
+                          available_customers=available_customers, available_items=available_items,
+                          items_by_category=items_by_category)
 
 # Route to serve files from data directory
 @app.route('/data/<path:filename>')

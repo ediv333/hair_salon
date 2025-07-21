@@ -81,32 +81,7 @@
         </div>
     </div>
 
-    <!-- Key Metrics -->
-    <div class="card mb-4 shadow-sm">
-        <div class="card-header bg-primary bg-opacity-10">
-            <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i> Key Business Metrics</h5>
-        </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-3 mb-3 text-center">
-                    <h4>{{ summary_stats.avg_price }}</h4>
-                    <p class="text-muted mb-0">Average Price</p>
-                </div>
-                <div class="col-md-3 mb-3 text-center">
-                    <h4>{{ summary_stats.customer_count }}</h4>
-                    <p class="text-muted mb-0">Unique Customers</p>
-                </div>
-                <div class="col-md-3 mb-3 text-center">
-                    <h4>{{ summary_stats.most_requested_item }}</h4>
-                    <p class="text-muted mb-0">Most Popular Service</p>
-                </div>
-                <div class="col-md-3 mb-3 text-center">
-                    <h4>{{ summary_stats.most_requested_price }}</h4>
-                    <p class="text-muted mb-0">Price of Popular Service</p>
-                </div>
-            </div>
-        </div>
-    </div>
+
 
     <!-- Items Data Table -->
     <div class="card shadow-sm">
@@ -134,6 +109,7 @@
                                 <th>Profit (Suggested)</th>
                                 <th>Custom Price</th>
                                 <th>Custom Profit</th>
+                                <th>Custom Profit Margin</th>
                                 <th>Save Price</th>
                             </tr>
                         </thead>
@@ -172,6 +148,9 @@
                                 </td>
                                 <td>
                                     <span class="badge rounded-pill bg-primary custom-profit-badge">{{ item.profit_custom }}</span>
+                                </td>
+                                <td>
+                                    <span class="badge rounded-pill bg-info custom-profit-margin-badge">{{ item.custom_profit_margin }}%</span>
                                 </td>
                                 <td>
                                     <button type="button" class="btn btn-sm btn-success save-price-btn" 
@@ -407,7 +386,7 @@
                 const input = document.querySelectorAll('.custom-price-input')[index];
                 const customPrice = parseFloat(input.value) || item.originalPrice;
                 
-                // Calculate custom profit
+                // Calculate custom profit: (Custom Price - Cost) × Quantity Sold
                 const customRevenue = customPrice * item.quantity;
                 const customProfit = customRevenue - (item.cost * item.quantity);
                 totalCustomProfit += customProfit;
@@ -416,6 +395,11 @@
                 // Update custom profit badge
                 const profitBadge = document.querySelectorAll('.custom-profit-badge')[index];
                 profitBadge.textContent = '฿' + customProfit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                
+                // Calculate and update custom profit margin: (Custom Profit / Custom Revenue) × 100
+                const customProfitMargin = customRevenue > 0 ? (customProfit / customRevenue * 100) : 0;
+                const profitMarginBadge = document.querySelectorAll('.custom-profit-margin-badge')[index];
+                profitMarginBadge.textContent = customProfitMargin.toFixed(2) + '%';
                 
                 // Calculate and update percentage change
                 const pctChange = ((customPrice / item.originalPrice) - 1) * 100;
@@ -465,10 +449,41 @@
                 const itemName = this.dataset.itemName;
                 const itemIndex = parseInt(this.dataset.itemIndex);
                 const priceInput = document.querySelectorAll('.custom-price-input')[itemIndex];
-                const newPrice = parseFloat(priceInput.value);
+                const customPrice = parseFloat(priceInput.value);
+                const originalPrice = items[itemIndex].originalPrice;
                 
-                if (isNaN(newPrice) || newPrice <= 0) {
+                // Get suggested price from the table
+                const suggestedPriceText = document.querySelectorAll('tbody tr')[itemIndex].cells[6].textContent.trim();
+                const suggestedPrice = parseFloat(suggestedPriceText.replace('฿', '').replace(/,/g, ''));
+                
+                // Determine which price to use: Custom Price if changed, otherwise Suggested Price
+                let finalPrice;
+                let priceSource;
+                
+                if (Math.abs(customPrice - originalPrice) > 0.01) {
+                    // User changed the custom price
+                    finalPrice = customPrice;
+                    priceSource = 'Custom Price';
+                } else {
+                    // User didn't change custom price, use suggested price
+                    finalPrice = suggestedPrice;
+                    priceSource = 'Suggested Price';
+                }
+                
+                if (isNaN(finalPrice) || finalPrice <= 0) {
                     alert('Please enter a valid price greater than zero.');
+                    return;
+                }
+                
+                // Show confirmation dialog
+                const confirmed = confirm(
+                    `Are you sure you want to update the price for "${itemName}"?\n\n` +
+                    `Current Price: ฿${originalPrice.toLocaleString()}\n` +
+                    `New Price: ฿${finalPrice.toLocaleString()} (${priceSource})\n\n` +
+                    `Click OK to approve this price change.`
+                );
+                
+                if (!confirmed) {
                     return;
                 }
                 
@@ -485,7 +500,7 @@
                     },
                     body: JSON.stringify({
                         itemName: itemName,
-                        newPrice: newPrice
+                        newPrice: finalPrice
                     })
                 })
                 .then(response => response.json())
@@ -507,7 +522,7 @@
                                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
                                 </div>
                                 <div class="toast-body">
-                                    Price for <strong>${itemName}</strong> has been updated to <strong>฿${newPrice}</strong> in ${data.type} database.
+                                    Price for <strong>${itemName}</strong> has been updated to <strong>฿${finalPrice.toLocaleString()}</strong> (${priceSource}) in ${data.type} database.
                                 </div>
                             </div>
                         `;

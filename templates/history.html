@@ -40,8 +40,12 @@
                             <label for="customer_filter" class="form-label">Customer</label>
                             <div class="input-group">
                                 <span class="input-group-text"><i class="fas fa-user"></i></span>
-                                <input type="text" class="form-control" name="customer_filter" id="customer_filter" 
-                                       placeholder="Filter by customer name" value="{{ filters.customer_filter }}">
+                                <select class="form-select" name="customer_filter" id="customer_filter">
+                                    <option value="">All Customers</option>
+                                    {% for customer in available_customers %}
+                                    <option value="{{ customer }}" {% if filters.customer_filter == customer %}selected{% endif %}>{{ customer }}</option>
+                                    {% endfor %}
+                                </select>
                             </div>
                         </div>
                         
@@ -63,8 +67,12 @@
                             <label for="item_filter" class="form-label">Item Name</label>
                             <div class="input-group">
                                 <span class="input-group-text"><i class="fas fa-cut"></i></span>
-                                <input type="text" class="form-control" name="item_filter" id="item_filter" 
-                                       placeholder="Filter by item name" value="{{ filters.item_filter }}">
+                                <select class="form-select" name="item_filter" id="item_filter">
+                                    <option value="">All Items</option>
+                                    {% for item in available_items %}
+                                    <option value="{{ item }}" {% if filters.item_filter == item %}selected{% endif %}>{{ item }}</option>
+                                    {% endfor %}
+                                </select>
                             </div>
                         </div>
                         
@@ -93,8 +101,8 @@
                 
                 <!-- Totals Summary -->
                 <div>
-                    <span class="badge bg-info">Total Revenue: ฿{{ total_revenue|default('0.00') }}</span>
-                    <span class="badge bg-success ms-2">Total Profit: ฿{{ total_profit|default('0.00') }}</span>
+                    <span class="badge bg-info">Total Revenue: {{ total_revenue|default('฿0.00') }}</span>
+                    <span class="badge bg-success ms-2">Total Profit: {{ total_profit|default('฿0.00') }}</span>
                 </div>
             </div>
             <div class="card-body p-0">
@@ -123,9 +131,9 @@
                                 <th>Item</th>
                                 <th>Category</th>
                                 <th class="text-center">Qty</th>
+                                <th class="text-end">Cost</th>
                                 <th class="text-end">Price</th>
                                 <th class="text-end">Total</th>
-                                <th class="text-end">Cost</th>
                                 <th class="text-end">Profit</th>
                             </tr>
                         </thead>
@@ -145,9 +153,9 @@
                                     {% endif %}
                                 </td>
                                 <td class="text-center">{{ job.quantity|int }}</td>
+                                <td class="text-end">฿{{ '%.2f'|format(job.cost|float) }}</td>
                                 <td class="text-end">฿{{ '%.2f'|format(job.price|float) }}</td>
                                 <td class="text-end">฿{{ '%.2f'|format(job.price|float * job.quantity|int) }}</td>
-                                <td class="text-end">฿{{ '%.2f'|format(job.cost|float) }}</td>
                                 <td class="text-end
                                     {% set item_profit = job.price|float * job.quantity|int - job.cost|float %}
                                     {% if item_profit > 0 %}
@@ -174,6 +182,10 @@
 </div>
 
 <script>
+// Items organized by category for dynamic filtering
+const itemsByCategory = {{ items_by_category|tojson|safe }};
+const allItems = {{ available_items|tojson|safe }};
+
 document.addEventListener('DOMContentLoaded', function() {
     // Set default date range if not provided
     if (!document.getElementById('date_to').value) {
@@ -186,6 +198,47 @@ document.addEventListener('DOMContentLoaded', function() {
         oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
         document.getElementById('date_from').valueAsDate = oneMonthAgo;
     }
+    
+    // Dynamic item filtering based on type selection
+    const typeFilter = document.getElementById('type_filter');
+    const itemFilter = document.getElementById('item_filter');
+    const currentItemFilter = '{{ filters.item_filter }}';
+    
+    function updateItemDropdown() {
+        const selectedType = typeFilter.value;
+        const currentValue = itemFilter.value;
+        
+        // Clear current options (except "All Items")
+        itemFilter.innerHTML = '<option value="">All Items</option>';
+        
+        let itemsToShow = [];
+        if (selectedType === '') {
+            // Show all items if no type is selected
+            itemsToShow = allItems;
+        } else {
+            // Show only items of selected type
+            itemsToShow = itemsByCategory[selectedType] || [];
+        }
+        
+        // Add items to dropdown
+        itemsToShow.forEach(function(item) {
+            const option = document.createElement('option');
+            option.value = item;
+            option.textContent = item;
+            if (item === currentValue || item === currentItemFilter) {
+                option.selected = true;
+            }
+            itemFilter.appendChild(option);
+        });
+    }
+    
+    // Initialize item dropdown based on current type filter
+    updateItemDropdown();
+    
+    // Add event listener for type filter changes
+    typeFilter.addEventListener('change', function() {
+        updateItemDropdown();
+    });
     
     // Form validation
     document.getElementById('filterForm').addEventListener('submit', function(event) {

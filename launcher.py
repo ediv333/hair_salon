@@ -100,6 +100,79 @@ def restore_data_folders():
     except Exception as e:
         print(f"Restore error: {e}")
 
+def migrate_jobs_csv():
+    """Migrate existing jobs.csv to new format: remove timestamp, add total_profit, fix costs"""
+    jobs_csv_path = os.path.join("data", "jobs.csv")
+    
+    if not os.path.exists(jobs_csv_path):
+        print("No jobs.csv found, skipping migration")
+        return
+    
+    try:
+        import pandas as pd
+        print("Checking jobs.csv for data migration...")
+        
+        # Read the CSV file
+        df = pd.read_csv(jobs_csv_path)
+        
+        # Check if migration is needed
+        needs_migration = False
+        
+        # Check if timestamp column exists and remove it
+        if 'timestamp' in df.columns:
+            print("Removing timestamp column...")
+            df = df.drop('timestamp', axis=1)
+            needs_migration = True
+        
+        # Check if total_profit column is missing
+        if 'total_profit' not in df.columns:
+            print("Adding total_profit column...")
+            needs_migration = True
+            
+            # Calculate total_profit: (price - cost) * quantity
+            # But first, we need to fix the cost column if it contains total costs
+            if 'cost' in df.columns and 'price' in df.columns and 'quantity' in df.columns:
+                # Detect if cost column contains total costs (cost > price indicates total cost)
+                # Fix cost column: if cost > price, assume it's total cost and convert to unit cost
+                for idx, row in df.iterrows():
+                    if pd.notna(row['cost']) and pd.notna(row['price']) and pd.notna(row['quantity']):
+                        cost = float(row['cost'])
+                        price = float(row['price'])
+                        quantity = int(row['quantity'])
+                        
+                        # If cost is much higher than price, it's likely total cost
+                        if cost > price and quantity > 1:
+                            # Convert total cost to unit cost
+                            unit_cost = cost / quantity
+                            df.at[idx, 'cost'] = unit_cost
+                            print(f"Fixed cost for {row.get('item', 'unknown')}: {cost} -> {unit_cost} (unit cost)")
+                
+                # Now calculate total_profit with corrected unit costs
+                df['total_profit'] = (df['price'] - df['cost']) * df['quantity']
+        
+        # Save the migrated data if changes were made
+        if needs_migration:
+            # Create backup of original file
+            backup_path = jobs_csv_path + ".backup"
+            shutil.copy2(jobs_csv_path, backup_path)
+            print(f"Created backup: {backup_path}")
+            
+            # Save the migrated data
+            df.to_csv(jobs_csv_path, index=False)
+            print("✅ jobs.csv migration completed successfully!")
+            print(f"   - Removed timestamp column (if existed)")
+            print(f"   - Added total_profit column")
+            print(f"   - Fixed cost column to use unit costs")
+        else:
+            print("✅ jobs.csv is already in the correct format")
+            
+    except ImportError:
+        print("⚠️  pandas not available, skipping jobs.csv migration")
+        print("   Install pandas with: pip install pandas")
+    except Exception as e:
+        print(f"❌ Error during jobs.csv migration: {e}")
+        print("   Please check your jobs.csv file manually")
+
 def close_browser_tabs():
     """Close any browser tabs with 127.0.0.1:500 in the URL"""
     try:
@@ -321,6 +394,9 @@ def main():
             # Restore data folder
             restore_data_folders()
             
+            # Migrate jobs.csv to new format if needed
+            migrate_jobs_csv()
+            
             # Update requirements.txt packages
             update_requirements()
             
@@ -328,6 +404,10 @@ def main():
         else:
             print("Update failed, restoring data folders...")
             restore_data_folders()
+    else:
+        # No updates available, but still check for data migration
+        print("No updates available")
+        migrate_jobs_csv()
     
     # Run the application
     run_app()

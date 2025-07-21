@@ -105,7 +105,13 @@ def load_jobs_data():
             
         # Calculate revenue and profit
         jobs_df['revenue'] = jobs_df['price'] * jobs_df['quantity']
-        jobs_df['profit'] = jobs_df['revenue'] - jobs_df['cost']
+        
+        # Use total_profit from CSV if available, otherwise calculate it
+        if 'total_profit' in jobs_df.columns:
+            jobs_df['profit'] = jobs_df['total_profit']
+        else:
+            # Calculate profit: (price - cost) * quantity (cost is unit cost)
+            jobs_df['profit'] = (jobs_df['price'] - jobs_df['cost']) * jobs_df['quantity']
         
         return jobs_df
         
