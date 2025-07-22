@@ -1025,6 +1025,271 @@ def clean_cookies():
     flash('All cookies have been cleared', 'success')
     return response
 
+@app.route('/api/price-suggestions/<item_name>')
+def get_price_suggestions(item_name):
+    """Get intelligent price suggestions based on historical data"""
+    try:
+        jobs_file = get_data_file_path('jobs.csv')
+        
+        # Read historical data
+        df = pd.read_csv(jobs_file)
+        
+        # Filter data for the specific item
+        item_data = df[df['item'].str.lower() == item_name.lower()]
+        
+        if item_data.empty:
+            return jsonify({
+                'success': True,
+                'suggestions': [],
+                'message': 'No historical data available for this item'
+            })
+        
+        # Calculate statistics
+        avg_price = item_data['price'].mean()
+        min_price = item_data['price'].min()
+        max_price = item_data['price'].max()
+        avg_cost = item_data['cost'].mean()
+        total_sales = len(item_data)
+        
+        # Calculate suggested promotional prices
+        suggestions = []
+        
+        # Conservative discount (10-15%)
+        conservative_price = avg_price * 0.85
+        if conservative_price > avg_cost:
+            profit_retention = round(((conservative_price - avg_cost) / (avg_price - avg_cost)) * 100, 1)
+            suggestions.append({
+                'type': 'conservative',
+                'price': round(conservative_price, 2),
+                'discount_percent': 15,
+                'description': 'Safe discount maintaining good profit',
+                'explanation': f'Retains {profit_retention}% of original profit while offering attractive 15% discount. Low risk strategy.',
+                'profit_margin': round(((conservative_price - avg_cost) / conservative_price) * 100, 1),
+                'profit_retention': profit_retention,
+                'risk_level': 'Low'
+            })
+        
+        # Moderate discount (20-25%)
+        moderate_price = avg_price * 0.75
+        if moderate_price > avg_cost:
+            profit_retention = round(((moderate_price - avg_cost) / (avg_price - avg_cost)) * 100, 1)
+            customer_savings = round(avg_price - moderate_price, 2)
+            suggestions.append({
+                'type': 'moderate',
+                'price': round(moderate_price, 2),
+                'discount_percent': 25,
+                'description': 'Attractive discount for customer appeal',
+                'explanation': f'Customers save ฿{customer_savings} per item. Retains {profit_retention}% profit while being competitive.',
+                'profit_margin': round(((moderate_price - avg_cost) / moderate_price) * 100, 1),
+                'profit_retention': profit_retention,
+                'risk_level': 'Medium'
+            })
+        
+        # Aggressive discount (30-35%)
+        aggressive_price = avg_price * 0.65
+        if aggressive_price > avg_cost:
+            profit_retention = round(((aggressive_price - avg_cost) / (avg_price - avg_cost)) * 100, 1)
+            customer_savings = round(avg_price - aggressive_price, 2)
+            suggestions.append({
+                'type': 'aggressive',
+                'price': round(aggressive_price, 2),
+                'discount_percent': 35,
+                'description': 'High discount for maximum customer attraction',
+                'explanation': f'Major ฿{customer_savings} savings per item. {profit_retention}% profit retention. Best for clearing inventory or attracting new customers.',
+                'profit_margin': round(((aggressive_price - avg_cost) / aggressive_price) * 100, 1),
+                'profit_retention': profit_retention,
+                'risk_level': 'High'
+            })
+        
+        # Most popular price (mode)
+        if total_sales > 1:
+            popular_price = item_data['price'].mode().iloc[0] if not item_data['price'].mode().empty else avg_price
+            popular_discount = round((1 - (popular_price * 0.8) / avg_price) * 100)
+            if popular_price * 0.8 > avg_cost:
+                profit_retention = round(((popular_price * 0.8 - avg_cost) / (popular_price - avg_cost)) * 100, 1)
+                frequency = len(item_data[item_data['price'] == popular_price])
+                suggestions.append({
+                    'type': 'popular',
+                    'price': round(popular_price * 0.8, 2),
+                    'discount_percent': popular_discount,
+                    'description': f'Based on most popular historical price (฿{popular_price})',
+                    'explanation': f'This price was used {frequency} times out of {total_sales} sales. Proven customer acceptance with {profit_retention}% profit retention.',
+                    'profit_margin': round(((popular_price * 0.8 - avg_cost) / (popular_price * 0.8)) * 100, 1),
+                    'profit_retention': profit_retention,
+                    'risk_level': 'Low'
+                })
+        
+        return jsonify({
+            'success': True,
+            'suggestions': suggestions,
+            'historical_data': {
+                'avg_price': round(avg_price, 2),
+                'min_price': round(min_price, 2),
+                'max_price': round(max_price, 2),
+                'avg_cost': round(avg_cost, 2),
+                'total_sales': total_sales
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f'Error getting price suggestions: {str(e)}')
+        return jsonify({
+            'success': False,
+            'message': f'Error analyzing historical data: {str(e)}'
+        })
+
+@app.route('/promotion', methods=['GET', 'POST'])
+def promotion():
+    """Handle promotion creation and display"""
+    if request.method == 'GET':
+        return render_template('promotion.html')
+    
+    elif request.method == 'POST':
+        try:
+            promotion_data = request.get_json()
+            
+            # Validate required fields
+            if not promotion_data.get('name') or not promotion_data.get('promotion'):
+                return jsonify({'success': False, 'message': 'Name and promotion items are required'})
+            
+            # Load existing promotions or create new list
+            promotions_file = get_data_file_path('promotions.json')
+            try:
+                with open(promotions_file, 'r', encoding='utf-8') as f:
+                    promotions = json.load(f)
+            except (FileNotFoundError, json.JSONDecodeError):
+                promotions = []
+            
+            # Add new promotion with ID
+            promotion_data['id'] = len(promotions) + 1
+            promotions.append(promotion_data)
+            
+            # Save to file
+            with open(promotions_file, 'w', encoding='utf-8') as f:
+                json.dump(promotions, f, indent=2, ensure_ascii=False)
+            
+            logger.info(f'New promotion created: {promotion_data["name"]}')
+            return jsonify({'success': True, 'message': 'Promotion created successfully'})
+            
+        except Exception as e:
+            logger.error(f'Error creating promotion: {str(e)}')
+            return jsonify({'success': False, 'message': f'Error creating promotion: {str(e)}'})
+
+@app.route('/api/promotions', methods=['GET'])
+def get_promotions():
+    """Return all promotions as JSON"""
+    try:
+        promotions_file = get_data_file_path('promotions.json')
+        try:
+            with open(promotions_file, 'r', encoding='utf-8') as f:
+                promotions = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            promotions = []
+        
+        logger.info(f'Retrieved {len(promotions)} promotions')
+        return jsonify({'success': True, 'promotions': promotions})
+    
+    except Exception as e:
+        logger.error(f'Error retrieving promotions: {str(e)}')
+        return jsonify({'success': False, 'message': 'Failed to retrieve promotions', 'error': str(e)})
+
+@app.route('/api/promotions/<int:promotion_id>', methods=['GET'])
+def get_promotion(promotion_id):
+    """Return a specific promotion by ID"""
+    try:
+        promotions_file = get_data_file_path('promotions.json')
+        try:
+            with open(promotions_file, 'r', encoding='utf-8') as f:
+                promotions = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            promotions = []
+        
+        # Find the promotion with the given ID
+        promotion = next((p for p in promotions if p.get('id') == promotion_id), None)
+        
+        if promotion:
+            logger.info(f'Retrieved promotion with ID {promotion_id}')
+            return jsonify({'success': True, 'promotion': promotion})
+        else:
+            logger.warning(f'Promotion with ID {promotion_id} not found')
+            return jsonify({'success': False, 'message': 'Promotion not found'}), 404
+    
+    except Exception as e:
+        logger.error(f'Error retrieving promotion {promotion_id}: {str(e)}')
+        return jsonify({'success': False, 'message': 'Failed to retrieve promotion', 'error': str(e)})
+
+@app.route('/api/promotions/<int:promotion_id>', methods=['PUT'])
+def update_promotion(promotion_id):
+    """Update an existing promotion"""
+    try:
+        # Get the promotion data from request
+        promotion_data = request.get_json()
+        
+        # Validate required fields
+        if not promotion_data.get('name') or not promotion_data.get('promotion'):
+            return jsonify({'success': False, 'message': 'Name and promotion items are required'}), 400
+        
+        # Load existing promotions
+        promotions_file = get_data_file_path('promotions.json')
+        try:
+            with open(promotions_file, 'r', encoding='utf-8') as f:
+                promotions = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            promotions = []
+        
+        # Find the promotion with the given ID
+        promotion_index = next((i for i, p in enumerate(promotions) if p.get('id') == promotion_id), None)
+        
+        if promotion_index is None:
+            return jsonify({'success': False, 'message': 'Promotion not found'}), 404
+        
+        # Preserve the ID and update other fields
+        promotion_data['id'] = promotion_id
+        promotions[promotion_index] = promotion_data
+        
+        # Save to file
+        with open(promotions_file, 'w', encoding='utf-8') as f:
+            json.dump(promotions, f, indent=2, ensure_ascii=False)
+        
+        logger.info(f'Updated promotion with ID {promotion_id}')
+        return jsonify({'success': True, 'message': 'Promotion updated successfully'})
+    
+    except Exception as e:
+        logger.error(f'Error updating promotion {promotion_id}: {str(e)}')
+        return jsonify({'success': False, 'message': 'Failed to update promotion', 'error': str(e)})
+
+@app.route('/api/promotions/<int:promotion_id>', methods=['DELETE'])
+def delete_promotion(promotion_id):
+    """Delete a promotion by ID"""
+    try:
+        # Load existing promotions
+        promotions_file = get_data_file_path('promotions.json')
+        try:
+            with open(promotions_file, 'r', encoding='utf-8') as f:
+                promotions = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            promotions = []
+        
+        # Find the promotion with the given ID
+        promotion_index = next((i for i, p in enumerate(promotions) if p.get('id') == promotion_id), None)
+        
+        if promotion_index is None:
+            return jsonify({'success': False, 'message': 'Promotion not found'}), 404
+        
+        # Remove the promotion
+        removed_promotion = promotions.pop(promotion_index)
+        
+        # Save to file
+        with open(promotions_file, 'w', encoding='utf-8') as f:
+            json.dump(promotions, f, indent=2, ensure_ascii=False)
+        
+        logger.info(f'Deleted promotion with ID {promotion_id}: {removed_promotion["name"]}')
+        return jsonify({'success': True, 'message': 'Promotion deleted successfully'})
+    
+    except Exception as e:
+        logger.error(f'Error deleting promotion {promotion_id}: {str(e)}')
+        return jsonify({'success': False, 'message': 'Failed to delete promotion', 'error': str(e)})
+
 if __name__ == '__main__':
     logger.info('Starting Flask application')
     app.run(host='0.0.0.0', debug=True)

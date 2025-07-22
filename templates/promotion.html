@@ -1,0 +1,2760 @@
+{% extends "layout.html" %}
+
+{% block title %}Promotions - Anyada Salon{% endblock %}
+
+{% block styles %}
+<style>
+    /* Modern Promotion Page Styles */
+    :root {
+        --primary-color: #764ba2;      /* Main purple */
+        --primary-light: #9670d3;      /* Lighter purple */
+        --primary-dark: #5a3a7e;       /* Darker purple */
+        --secondary-color: #667eea;    /* Blue accent */
+        --success-color: #28a745;      /* Success green */
+        --danger-color: #dc3545;       /* Danger red */
+        --light-bg: #f8f9fc;           /* Light background */
+        --card-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+        --transition-speed: 0.3s;
+        --border-radius: 0.75rem;
+    }
+    
+    /* Main Container Styling */
+    .promotions-container {
+        border: none !important;
+        padding: 0 !important;
+        background-color: white;
+        border-radius: var(--border-radius);
+        box-shadow: var(--card-shadow);
+        overflow: hidden;
+        margin-bottom: 2rem;
+    }
+    
+    /* Header Styling */
+    .page-header {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        padding: 2.5rem 2rem;
+        color: white;
+        border-radius: var(--border-radius) var(--border-radius) 0 0;
+        margin-bottom: 2rem;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .page-header::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><path d="M0 0 L100 0 L100 100 L50 80 Z" fill="rgba(255,255,255,0.1)"/></svg>');
+        opacity: 0.2;
+    }
+
+    .page-title {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Search and Filter Area */
+    .search-filter-container {
+        background-color: var(--light-bg);
+        padding: 1.5rem 2rem;
+        border-radius: 15px;
+        margin-bottom: 2rem;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        align-items: center;
+    }
+    
+    .search-container {
+        flex-grow: 1;
+        max-width: 400px;
+        position: relative;
+    }
+    
+    .search-container input {
+        border-radius: 30px;
+        padding-left: 2.75rem;
+        padding-right: 1.25rem;
+        height: 45px;
+        border: 1px solid #e0e7ff;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+        transition: all var(--transition-speed) ease;
+        width: 100%;
+    }
+    
+    .search-container input:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 0.2rem rgba(118, 75, 162, 0.25);
+    }
+    
+    .search-container .search-icon {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #adb5bd;
+    }
+
+    /* Button Styling */
+    .btn-create {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        border: none;
+        color: white;
+        font-weight: 500;
+        padding: 0.65rem 1.5rem;
+        border-radius: 30px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+    }
+    
+    .btn-create:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 10px rgba(0,0,0,0.15);
+        filter: brightness(1.05);
+    }
+    
+    /* Table Styling */
+    .promotion-table {
+        border: none;
+        margin-bottom: 0;
+    }
+
+    .table-responsive {
+        border: none !important;
+        padding: 0 !important;
+    }
+
+    .promotion-table thead {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        color: white;
+    }
+    
+    .promotion-table thead th {
+        font-weight: 600;
+        padding: 1rem 1.25rem;
+        border-bottom: none;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+    }
+    
+    .promotion-table tbody tr {
+        transition: background-color 0.2s ease;
+        border-bottom: 1px solid #f1f1f1;
+    }
+    
+    .promotion-table tbody tr:hover {
+        background-color: rgba(118, 75, 162, 0.03);
+    }
+    
+    .promotion-table td {
+        padding: 1rem 1.25rem;
+        vertical-align: middle;
+    }
+    
+    /* Action Buttons */
+    .btn-group .btn-sm {
+        padding: 0.4rem 0.75rem;
+        border-radius: 6px;
+        transition: all 0.2s ease;
+    }
+    
+    .btn-outline-secondary {
+        color: var(--primary-color);
+        border-color: var(--primary-color);
+    }
+    
+    .btn-outline-secondary:hover {
+        background-color: var(--primary-color);
+        color: white;
+        border-color: var(--primary-color);
+    }
+    
+    .btn-outline-danger {
+        color: var(--danger-color);
+        border-color: var(--danger-color);
+    }
+    
+    .btn-outline-danger:hover {
+        background-color: var(--danger-color);
+        color: white;
+        border-color: var(--danger-color);
+    }
+
+    /* Modal Styling */
+    .modal-content {
+        border: none;
+        border-radius: var(--border-radius);
+        box-shadow: 0 5px 25px rgba(0,0,0,0.15);
+        overflow: hidden;
+    }
+    
+    .modal-header.bg-primary {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%) !important;
+        border-bottom: none;
+        padding: 1.5rem;
+    }
+    
+    .modal-header.bg-secondary {
+        background: linear-gradient(135deg, #5a6acf 0%, #384d9c 100%) !important;
+        border-bottom: none;
+        padding: 1.5rem;
+    }
+    
+    .modal-title {
+        font-weight: 600;
+        letter-spacing: 0.5px;
+    }
+    
+    .modal-body {
+        padding: 2rem;
+    }
+    
+    .modal-footer {
+        border-top: none;
+        padding: 1rem 2rem 1.5rem;
+    }
+    
+    /* Form Styling */
+    .form-section {
+        background: #f8f9fc;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        border: 1px solid #e9ecef;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    }
+    
+    .section-title {
+        display: flex;
+        align-items: center;
+        color: var(--primary-dark);
+        font-weight: 600;
+        margin-bottom: 1.25rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid #e0e7ff;
+    }
+    
+    .section-title i {
+        margin-right: 0.75rem;
+        color: var(--primary-color);
+    }
+    
+    /* Enhancement for promotion item card */
+    .promotion-item-card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+        overflow: hidden;
+    }
+    
+    .promotion-item-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    }
+    
+    .promotion-item-card .card-title {
+        font-weight: 600;
+        color: #333;
+    }
+    
+    .promotion-stat {
+        text-align: center;
+        padding: 10px;
+        border-radius: 8px;
+        background-color: #f8f9fa;
+    }
+    
+    .stat-value {
+        font-size: 1.2rem;
+        font-weight: bold;
+    }
+    
+    .stat-label {
+        font-size: 0.8rem;
+        color: #6c757d;
+    }
+    
+    .modal-content {
+        border: none;
+        border-radius: 15px;
+        overflow: hidden;
+    }
+    
+    .modal-header {
+        border-bottom: none;
+    }
+    
+    .modal-footer {
+        border-top: none;
+    }
+
+    /* Toast notification styles */
+    .toast-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+    }
+    
+    .toast {
+        min-width: 300px;
+        background-color: #fff;
+        color: #333;
+        padding: 15px 25px;
+        margin-bottom: 10px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        animation: slideIn 0.3s ease-in-out;
+        transition: all 0.3s ease;
+    }
+    
+    .toast-success {
+        border-left: 4px solid #28a745;
+    }
+    
+    .toast-error {
+        border-left: 4px solid #dc3545;
+    }
+    
+    .toast-info {
+        border-left: 4px solid #17a2b8;
+    }
+    
+    .toast-icon {
+        margin-right: 12px;
+        font-size: 20px;
+    }
+    
+    .toast-success .toast-icon {
+        color: #28a745;
+    }
+    
+    .toast-error .toast-icon {
+        color: #dc3545;
+    }
+    
+    .toast-info .toast-icon {
+        color: #17a2b8;
+    }
+    
+    .toast-message {
+        flex: 1;
+    }
+    
+    .toast-close {
+        background: none;
+        border: none;
+        color: #aaa;
+        cursor: pointer;
+        font-size: 16px;
+        margin-left: 15px;
+        padding: 0;
+    }
+    
+    .toast-close:hover {
+        color: #333;
+    }
+    
+    @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    
+    @keyframes fadeOut {
+        from { opacity: 1; }
+        to { opacity: 0; }
+    }
+    
+    .promotion-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
+    }
+
+    .promotion-card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+        overflow: hidden;
+    }
+.promotion-card {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+.promotion-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+}
+
+.form-section {
+    background: #f8f9ff;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    border-left: 4px solid #667eea;
+}
+
+.section-title {
+    color: #4a5568;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.item-details-card {
+    background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+    border: 2px solid #e1f5fe;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(33, 150, 243, 0.1);
+    transition: all 0.3s ease;
+}
+
+.metric-card {
+    background: white;
+    border-radius: 10px;
+    padding: 1rem;
+    text-align: center;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+}
+
+.metric-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.metric-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+}
+
+.metric-label {
+    font-size: 0.875rem;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.promo-impact {
+    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+    border: 2px solid #b8dacc;
+    border-radius: 10px;
+    padding: 1rem;
+}
+
+.promotion-table {
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+.promotion-table thead {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.promotion-table thead th {
+    border: none;
+    font-weight: 600;
+    padding: 1rem 0.75rem;
+}
+
+.promotion-table tbody tr {
+    transition: all 0.2s ease;
+}
+
+.promotion-table tbody tr:hover {
+    background-color: #f8f9ff;
+    transform: scale(1.01);
+}
+
+.summary-card {
+    background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+    border: 2px solid #ffcc02;
+    border-radius: 15px;
+    box-shadow: 0 6px 25px rgba(255, 193, 7, 0.2);
+}
+
+.summary-metric {
+    text-align: center;
+    padding: 1rem;
+}
+
+.summary-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+}
+
+.summary-label {
+    color: #6b7280;
+    font-weight: 500;
+    font-size: 0.875rem;
+}
+
+.btn-add-item {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    border-radius: 50%;
+    width: 45px;
+    height: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.btn-add-item:hover {
+    transform: scale(1.1) rotate(90deg);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.btn-create-promotion {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    border: none;
+    border-radius: 25px;
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+    transition: all 0.3s ease;
+}
+
+.btn-create-promotion:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+}
+
+.btn-reset {
+    background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+    border: none;
+    border-radius: 25px;
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+    color: white;
+    transition: all 0.3s ease;
+}
+
+.btn-reset:hover {
+    transform: translateY(-2px);
+    color: white;
+}
+
+.form-control, .form-select {
+    border-radius: 10px;
+    border: 2px solid #e9ecef;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+.alert-info {
+    background: linear-gradient(135deg, #cce7ff 0%, #e1f5fe 100%);
+    border: 2px solid #81d4fa;
+    border-radius: 12px;
+    color: #0277bd;
+}
+
+.fade-in {
+    animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.pulse {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+.suggestion-card {
+    background: white;
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    padding: 1.25rem;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    min-height: 280px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.suggestion-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    border-color: #667eea;
+}
+
+.suggestion-card.selected {
+    border-color: #667eea;
+    background: linear-gradient(135deg, #f8f9ff 0%, #e3f2fd 100%);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
+}
+
+.suggestion-card.conservative {
+    border-color: #28a745;
+}
+
+.suggestion-card.conservative:hover {
+    border-color: #28a745;
+    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+}
+
+.suggestion-card.moderate {
+    border-color: #ffc107;
+}
+
+.suggestion-card.moderate:hover {
+    border-color: #ffc107;
+    background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+}
+
+.suggestion-card.aggressive {
+    border-color: #dc3545;
+}
+
+.suggestion-card.aggressive:hover {
+    border-color: #dc3545;
+    background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+}
+
+.suggestion-card.popular {
+    border-color: #6f42c1;
+}
+
+.suggestion-card.popular:hover {
+    border-color: #6f42c1;
+    background: linear-gradient(135deg, #e2d9f3 0%, #d1c4e9 100%);
+}
+
+.suggestion-price {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.suggestion-discount {
+    background: #667eea;
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    display: inline-block;
+}
+
+.suggestion-description {
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin-bottom: 0.5rem;
+}
+
+.suggestion-profit {
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.suggestion-explanation {
+    font-size: 0.8rem;
+    line-height: 1.4;
+    color: #6b7280;
+    background: #f8f9fa;
+    padding: 0.5rem;
+    border-radius: 6px;
+    border-left: 3px solid #667eea;
+}
+
+.badge-sm {
+    font-size: 0.7rem;
+    padding: 0.25rem 0.5rem;
+}
+
+.loading-suggestions {
+    text-align: center;
+    padding: 2rem;
+    color: #6b7280;
+}
+
+.no-suggestions {
+    text-align: center;
+    padding: 2rem;
+    color: #6b7280;
+    background: #f8f9fa;
+    border-radius: 10px;
+    border: 2px dashed #dee2e6;
+}
+
+.optimization-card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    height: 100%;
+}
+
+.optimization-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+}
+
+.suggestions-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.suggestion-option {
+    background: #f8f9fa;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.suggestion-option:hover {
+    border-color: #667eea;
+    background: #f0f4ff;
+    transform: translateX(5px);
+}
+
+.suggestion-option.recommended {
+    border-color: #28a745;
+    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+    position: relative;
+}
+
+.suggestion-option.recommended::before {
+    content: '⭐';
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: #28a745;
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Toast notification container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<div class="promotion-header text-center">
+    <h1 class="mb-3">
+        <i class="fas fa-tags me-3"></i>Promotions
+    </h1>
+    <p class="lead mb-0">Manage salon promotional packages and special offers</p>
+</div>
+
+
+
+<!-- Search and Filter Bar -->
+<div class="search-filter-container mb-4">
+    <div class="row g-3 align-items-center">
+        <div class="col-md-5">
+            <div class="input-group">
+                <span class="input-group-text bg-light border-0">
+                    <i class="fas fa-search text-muted"></i>
+                </span>
+                <input type="text" class="form-control border-0 bg-light" id="searchPromotion" 
+                    placeholder="Search promotions by name...">
+            </div>
+        </div>
+        <div class="col-md-3">
+            <select class="form-select border-0 bg-light" id="filterProfit">
+                <option value="">Filter by Profit</option>
+                <option value="high">Highest Profit</option>
+                <option value="low">Lowest Profit</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select class="form-select border-0 bg-light" id="sortBy">
+                <option value="date">Sort by Date</option>
+                <option value="name">Sort by Name</option>
+                <option value="price">Sort by Price</option>
+            </select>
+        </div>
+        <div class="col-md-2 text-end">
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createPromotionModal">
+                <i class="fas fa-plus-circle me-2"></i>Create Promotion
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Promotions Display Section -->
+<div class="promotions-container" style="border: 3px solid red; padding: 10px;">
+    <div class="table-responsive" style="border: 2px solid blue; padding: 5px;">
+        <table id="promotionsTable" class="table table-hover border-rounded promotion-table">
+            <thead>
+                <tr>
+                    <th>Created Date</th>
+                    <th>Name</th>
+                    <th>Description</th>
+                    <th>Price (฿)</th>
+                    <th>Cost (฿)</th>
+                    <th>Profit (฿)</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="promotionsList">
+                <!-- Promotions will be loaded here -->
+                <tr>
+                    <td colspan="7" class="text-center">
+                        <i class="fas fa-spinner fa-spin me-2"></i> Loading promotions...
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- No promotions message -->
+    <div id="noPromotionsMessage" style="display: none;">
+        <div class="text-center py-5">
+            <i class="fas fa-tag fa-3x text-muted mb-3"></i>
+            <h4 class="text-muted">No promotions found</h4>
+            <p class="text-muted">Create your first promotion to get started</p>
+            <button type="button" class="btn btn-primary mt-3" data-bs-toggle="modal" data-bs-target="#createPromotionModal">
+                <i class="fas fa-plus-circle me-2"></i>Create Promotion
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Create Promotion Modal -->
+<div class="modal fade" id="createPromotionModal" tabindex="-1" aria-labelledby="createPromotionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="createPromotionModalLabel">
+                    <i class="fas fa-tags me-2"></i>Create New Promotion
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="promotionForm" onsubmit="return false;">
+                    <!-- Basic Information -->
+                    <div class="form-section">
+                        <h5 class="section-title">
+                            <i class="fas fa-info-circle text-primary"></i>
+                            Basic Information
+                        </h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label for="promotionName" class="form-label fw-semibold">Promotion Name</label>
+                                <input type="text" class="form-control" id="promotionName" placeholder="Enter promotion name" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="promotionDescription" class="form-label fw-semibold">Description</label>
+                                <textarea class="form-control" id="promotionDescription" rows="2" placeholder="Describe your promotion"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Item Selection -->
+                    <div class="form-section">
+                        <h5 class="section-title">
+                            <i class="fas fa-shopping-cart text-success"></i>
+                            Add Items to Promotion
+                        </h5>
+                        <div class="row align-items-end">
+                            <div class="col-md-3">
+                                <label for="itemType" class="form-label fw-semibold">Item Type</label>
+                                <select class="form-select" id="itemType">
+                                    <option value="">Select Type</option>
+                                    <option value="services"><i class="fas fa-cut"></i> Services</option>
+                                    <option value="products"><i class="fas fa-box"></i> Products</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="itemSelect" class="form-label fw-semibold">Select Item</label>
+                                <select class="form-select" id="itemSelect" disabled>
+                                    <option value="">Select Item</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="quantity" class="form-label fw-semibold">Quantity</label>
+                                <input type="number" class="form-control" id="quantity" min="1" value="1">
+                            </div>
+                            <input type="hidden" id="promoPrice" value="0">
+                            <div class="col-md-2 text-center">
+                                <label class="form-label fw-semibold">Action</label>
+                                <div>
+                                    <button type="button" class="btn btn-primary rounded-circle" style="width: 40px; height: 40px; cursor: pointer;" onclick="addItemManually()" title="Add item to promotion">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <!-- Promotion Items Table -->
+                    <div class="form-section">
+                        <h5 class="section-title">
+                            <i class="fas fa-list text-primary"></i>
+                            Promotion Items
+                        </h5>
+                        <div class="table-responsive">
+                            <table class="table promotion-table" id="promotionItemsTable">
+                                <thead>
+                                    <tr>
+                                        <th><i class="fas fa-tag me-1"></i>Item Name</th>
+                                        <th><i class="fas fa-dollar-sign me-1"></i>Original Price</th>
+                                        <th><i class="fas fa-coins me-1"></i>Cost</th>
+                                        <th><i class="fas fa-chart-line me-1"></i>Original Profit</th>
+                                        <th><i class="fas fa-percentage me-1"></i>Promo Price</th>
+                                        <th><i class="fas fa-sort-numeric-up me-1"></i>Quantity</th>
+                                        <th><i class="fas fa-money-bill-wave me-1"></i>Promo Profit</th>
+                                        <th><i class="fas fa-cog me-1"></i>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="promotionItemsBody">
+                                    <tr id="noItemsRow">
+                                        <td colspan="8" class="text-center py-5">
+                                            <div class="text-muted">
+                                                <i class="fas fa-inbox fa-3x mb-3 opacity-50"></i>
+                                                <div class="h5">No items added yet</div>
+                                                <small>Start by selecting an item type and adding items to your promotion</small>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- AI Price Optimization -->
+                    <div class="fade-in" id="priceOptimizationRow" style="display: none;">
+                        <div class="form-section">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="section-title text-success mb-0">
+                                    <i class="fas fa-brain"></i>
+                                    AI Price Optimization
+                                    <small class="text-muted ms-2">Optimize prices for items in your promotion</small>
+                                </h5>
+                                <button type="button" class="btn btn-outline-success btn-sm" onclick="analyzePromotionPricing()">
+                                    <i class="fas fa-magic me-1"></i>Analyze Pricing
+                                </button>
+                            </div>
+                            <div id="optimizationContainer">
+                                <div class="alert alert-info text-center">
+                                    <i class="fas fa-lightbulb fa-2x mb-2"></i>
+                                    <div class="h6">Ready to optimize your promotion pricing?</div>
+                                    <small>Click "Analyze Pricing" to get AI recommendations for each item in your promotion</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Promotion Summary -->
+                    <div class="summary-card">
+                        <div class="card-body p-4">
+                            <h5 class="section-title text-warning mb-4">
+                                <i class="fas fa-calculator"></i>
+                                Promotion Summary
+                            </h5>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <div class="summary-metric">
+                                        <div class="summary-value text-primary" id="totalPromoPrice">฿0.00</div>
+                                        <div class="summary-label">
+                                            <i class="fas fa-tag me-1"></i>Total Promotion Price
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="summary-metric">
+                                        <div class="summary-value text-warning" id="totalCost">฿0.00</div>
+                                        <div class="summary-label">
+                                            <i class="fas fa-coins me-1"></i>Total Cost
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="summary-metric pulse">
+                                        <div class="summary-value text-success" id="totalProfit">฿0.00</div>
+                                        <div class="summary-label">
+                                            <i class="fas fa-chart-line me-1"></i>Total Profit
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="text-center pt-4">
+                        <button type="button" class="btn btn-reset me-3" onclick="resetForm()">
+                            <i class="fas fa-undo me-2"></i>Reset
+                        </button>
+                        <button type="button" class="btn btn-primary" id="createPromotionBtn" onclick="submitPromotionForm()">
+                            <i class="fas fa-save me-2"></i>Create Promotion
+                        </button>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <!-- Footer kept for spacing, buttons removed for cleaner interface -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Promotion Modal -->
+<div class="modal fade" id="editPromotionModal" tabindex="-1" aria-labelledby="editPromotionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-secondary text-white">
+                <h5 class="modal-title" id="editPromotionModalLabel">
+                    <i class="fas fa-edit me-2"></i>Edit Promotion
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="editPromotionForm" onsubmit="return false;">
+                    <input type="hidden" id="editPromotionId">
+                    
+                    <!-- Basic Information -->
+                    <div class="form-section">
+                        <h5 class="section-title">
+                            <i class="fas fa-info-circle text-secondary"></i>
+                            Basic Information
+                        </h5>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="editPromotionName" class="form-label">Promotion Name</label>
+                                <input type="text" class="form-control" id="editPromotionName" placeholder="Enter promotion name" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="editPromotionDescription" class="form-label">Description</label>
+                                <textarea class="form-control" id="editPromotionDescription" placeholder="Enter description"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Promotion Items -->
+                    <div class="form-section">
+                        <h5 class="section-title">
+                            <i class="fas fa-list text-secondary"></i>
+                            Promotion Items
+                        </h5>
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-secondary">
+                                    <tr>
+                                        <th>Item Name</th>
+                                        <th>Type</th>
+                                        <th>Original Price</th>
+                                        <th>Cost</th>
+                                        <th>Promo Price</th>
+                                        <th>Profit</th>
+                                        <th>Quantity</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="editItemsTable">
+                                    <!-- Items will be added here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- Promotion Summary -->
+                    <div class="summary-card">
+                        <div class="card-body p-4">
+                            <h5 class="section-title text-warning mb-4">
+                                <i class="fas fa-calculator"></i>
+                                Promotion Summary
+                            </h5>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="summary-metric pulse">
+                                        <div class="summary-value" id="editTotalPrice">฿0.00</div>
+                                        <div class="summary-label">
+                                            <i class="fas fa-tag me-1"></i>Total Price
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="summary-metric pulse">
+                                        <div class="summary-value" id="editTotalCost">฿0.00</div>
+                                        <div class="summary-label">
+                                            <i class="fas fa-coins me-1"></i>Total Cost
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="summary-metric pulse">
+                                        <div class="summary-value text-success" id="editTotalProfit">฿0.00</div>
+                                        <div class="summary-label">
+                                            <i class="fas fa-chart-line me-1"></i>Total Profit
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="text-center pt-4">
+                        <button type="button" class="btn btn-reset me-3" data-bs-dismiss="modal">
+                            <i class="fas fa-times me-2"></i>Cancel
+                        </button>
+                        <button type="button" class="btn btn-primary" id="updatePromotionBtn" onclick="updatePromotion()">
+                            <i class="fas fa-save me-2"></i>Update Promotion
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Immediate script execution to ensure promotions load
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded, initializing promotion page');
+    
+    // Initialize the promotion list
+    loadPromotions();
+    
+    // Set up search functionality
+    const searchInput = document.getElementById('searchPromotion');
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            console.log('Search term changed:', this.value);
+            loadPromotions(this.value);
+        });
+    }
+    
+    // Set up filter functionality
+    const filterSelect = document.getElementById('filterProfit');
+    if (filterSelect) {
+        filterSelect.addEventListener('change', function() {
+            console.log('Filter changed:', this.value);
+            loadPromotions(searchInput ? searchInput.value : '');
+        });
+    }
+    
+    // Set up sort functionality
+    const sortSelect = document.getElementById('sortBy');
+    if (sortSelect) {
+        sortSelect.addEventListener('change', function() {
+            console.log('Sort changed:', this.value);
+            loadPromotions(searchInput ? searchInput.value : '');
+        });
+    }
+});
+
+// Make sure the search input is found and initialized
+setTimeout(function() {
+    const searchInput = document.getElementById('searchPromotion');
+    if (searchInput && !searchInput.hasAttribute('data-initialized')) {
+        searchInput.setAttribute('data-initialized', 'true');
+        searchInput.addEventListener('input', function() {
+            loadPromotions(this.value);
+        });
+        console.log('Search input initialized with event listener');
+    }
+}, 1000);
+
+// Toast notification function
+function showToast(message, type = 'info') {
+    const toastContainer = document.getElementById('toastContainer');
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    
+    let icon = 'info-circle';
+    if (type === 'success') icon = 'check-circle';
+    if (type === 'error') icon = 'exclamation-circle';
+    
+    toast.innerHTML = `
+        <div class="toast-icon"><i class="fas fa-${icon}"></i></div>
+        <div class="toast-message">${message}</div>
+        <button class="toast-close" onclick="this.parentElement.remove()"><i class="fas fa-times"></i></button>
+    `;
+    
+    toastContainer.appendChild(toast);
+    
+    // Auto dismiss after 5 seconds
+    setTimeout(() => {
+        toast.style.animation = 'fadeOut 0.3s ease-in-out forwards';
+        setTimeout(() => toast.remove(), 300);
+    }, 5000);
+}
+
+let servicesData = [];
+let inventoryData = [];
+let promotionItems = [];
+
+// Load data on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadServicesData();
+    loadInventoryData();
+    setupEventListeners();
+});
+
+function loadServicesData() {
+    fetch('/api/services')
+        .then(response => response.json())
+        .then(data => {
+            servicesData = data;
+        })
+        .catch(error => console.error('Error loading services:', error));
+}
+
+function loadInventoryData() {
+    fetch('/api/inventory')
+        .then(response => response.json())
+        .then(data => {
+            inventoryData = data;
+        })
+        .catch(error => console.error('Error loading inventory:', error));
+}
+
+function setupEventListeners() {
+    const itemType = document.getElementById('itemType');
+    const itemSelect = document.getElementById('itemSelect');
+    const promoPrice = document.getElementById('promoPrice');
+    const addItemBtn = document.getElementById('addItemBtn');
+    const promotionForm = document.getElementById('promotionForm');
+
+    itemType.addEventListener('change', function() {
+        console.log('Item type changed:', this.value);
+        populateItemSelect();
+        validateAddButton();
+    });
+
+    itemSelect.addEventListener('change', function() {
+        console.log('Item selected:', this.value);
+        updatePriceField();
+        validateAddButton();
+    });
+
+    promoPrice.addEventListener('input', function() {
+        console.log('Promo price changed:', this.value);
+        validateAddButton();
+        updatePromoProfit();
+    });
+
+    document.getElementById('quantity').addEventListener('input', updatePromoProfit);
+
+    addItemBtn.addEventListener('click', addItemToPromotion);
+}
+
+function populateItemSelect() {
+    const itemType = document.getElementById('itemType').value;
+    const itemSelect = document.getElementById('itemSelect');
+    
+    itemSelect.innerHTML = '<option value="">Select Item</option>';
+    itemSelect.disabled = !itemType;
+    
+    if (itemType === 'services') {
+        servicesData.forEach(service => {
+            const option = document.createElement('option');
+            option.value = service.name;
+            option.textContent = service.name;
+            option.dataset.price = service.price;
+            option.dataset.cost = service.cost;
+            option.dataset.type = 'service';
+            itemSelect.appendChild(option);
+        });
+    } else if (itemType === 'products') {
+        inventoryData.forEach(product => {
+            const option = document.createElement('option');
+            option.value = product.name;
+            option.textContent = product.name;
+            option.dataset.price = product.retail_price;
+            option.dataset.cost = product.cost;
+            option.dataset.type = 'product';
+            itemSelect.appendChild(option);
+        });
+    }
+    
+    // Reset promo price when item type changes
+    document.getElementById('promoPrice').value = '';
+    
+    // Validate button after populating
+    validateAddButton();
+}
+
+function updatePriceField() {
+    const itemSelect = document.getElementById('itemSelect');
+    const promoPrice = document.getElementById('promoPrice');
+    const itemDetailsRow = document.getElementById('itemDetailsRow');
+    
+    if (itemSelect.value) {
+        const selectedOption = itemSelect.options[itemSelect.selectedIndex];
+        const originalPrice = parseFloat(selectedOption.dataset.price);
+        const cost = parseFloat(selectedOption.dataset.cost);
+        const profit = originalPrice - cost;
+        const profitMargin = originalPrice > 0 ? ((profit / originalPrice) * 100) : 0;
+        
+        // Set promo price to original price (now hidden)
+        promoPrice.value = originalPrice;
+        console.log('Auto-set promo price to:', originalPrice);
+        
+        // Update item details display
+        document.getElementById('itemCurrentPrice').textContent = `฿${originalPrice.toFixed(2)}`;
+        document.getElementById('itemCost').textContent = `฿${cost.toFixed(2)}`;
+        document.getElementById('itemCurrentProfit').textContent = `฿${profit.toFixed(2)}`;
+        document.getElementById('itemProfitMargin').textContent = `${profitMargin.toFixed(1)}%`;
+        
+        // Show item details
+        itemDetailsRow.style.display = 'block';
+        
+        // Update promo profit display
+        updatePromoProfit();
+        
+        // Remove AI suggestions loading from item selection
+    } else {
+        // Hide item details if no item selected
+        itemDetailsRow.style.display = 'none';
+        document.getElementById('promoImpact').style.display = 'none';
+        document.getElementById('priceSuggestionsRow').style.display = 'none';
+    }
+    
+    // Always validate the add button after updating price field
+    validateAddButton();
+}
+
+function updatePromoProfit() {
+    const itemSelect = document.getElementById('itemSelect');
+    const promoPrice = document.getElementById('promoPrice').value;
+    const quantity = document.getElementById('quantity').value;
+    const promoImpact = document.getElementById('promoImpact');
+    const promoProfitSpan = document.getElementById('promoProfit');
+    
+    if (itemSelect.value && promoPrice && parseFloat(promoPrice) > 0) {
+        const selectedOption = itemSelect.options[itemSelect.selectedIndex];
+        const cost = parseFloat(selectedOption.dataset.cost);
+        const promoValue = parseFloat(promoPrice);
+        const qty = parseInt(quantity) || 1;
+        
+        const promoProfit = (promoValue - cost) * qty;
+        const originalPrice = parseFloat(selectedOption.dataset.price);
+        const originalProfit = (originalPrice - cost) * qty;
+        
+        promoProfitSpan.textContent = `฿${promoProfit.toFixed(2)}`;
+        promoProfitSpan.className = promoProfit >= 0 ? 'text-success' : 'text-danger';
+        
+        // Show comparison with original profit
+        const profitDifference = promoProfit - originalProfit;
+        if (profitDifference !== 0) {
+            const diffText = profitDifference > 0 ? 
+                `(+฿${profitDifference.toFixed(2)} vs original)` : 
+                `(฿${profitDifference.toFixed(2)} vs original)`;
+            promoProfitSpan.innerHTML += `<br><small class="${profitDifference > 0 ? 'text-success' : 'text-danger'}">${diffText}</small>`;
+        }
+        
+        promoImpact.style.display = 'block';
+    } else {
+        promoImpact.style.display = 'none';
+    }
+}
+
+function validateAddButton() {
+    try {
+        const itemType = document.getElementById('itemType');
+        const itemSelect = document.getElementById('itemSelect');
+        const promoPrice = document.getElementById('promoPrice');
+        const addItemBtn = document.getElementById('addItemBtn');
+        
+        if (!itemType || !itemSelect || !promoPrice || !addItemBtn) {
+            console.error('Missing form elements');
+            return;
+        }
+        
+        const itemTypeValue = itemType.value;
+        const itemSelectValue = itemSelect.value;
+        const promoPriceValue = promoPrice.value;
+        
+        // Check if all required fields are filled
+        const isValid = itemTypeValue && itemSelectValue && promoPriceValue && parseFloat(promoPriceValue) > 0;
+        
+        console.log('Add Item Button Validation:', {
+            itemType: itemTypeValue,
+            itemSelect: itemSelectValue,
+            promoPrice: promoPriceValue,
+            isValid: isValid
+        });
+        
+        // Update button state
+        addItemBtn.disabled = !isValid;
+        
+        if (isValid) {
+            addItemBtn.classList.remove('disabled');
+            addItemBtn.style.opacity = '1';
+            addItemBtn.style.cursor = 'pointer';
+        } else {
+            addItemBtn.classList.add('disabled');
+            addItemBtn.style.opacity = '0.6';
+            addItemBtn.style.cursor = 'not-allowed';
+        }
+    } catch (error) {
+        console.error('Error in validateAddButton:', error);
+    }
+}
+
+function addItemToPromotion() {
+    const itemSelect = document.getElementById('itemSelect');
+    const promoPrice = parseFloat(document.getElementById('promoPrice').value);
+    const quantity = parseInt(document.getElementById('quantity').value);
+    
+    if (!itemSelect.value) return;
+    
+    const selectedOption = itemSelect.options[itemSelect.selectedIndex];
+    const itemType = document.getElementById('itemType').value;
+    
+    // Calculate values
+    const originalPrice = parseFloat(selectedOption.dataset.price);
+    const cost = parseFloat(selectedOption.dataset.cost);
+    const originalProfit = originalPrice - cost;
+    const promoProfit = (promoPrice - cost) * quantity;
+    
+    const promotionItem = {
+        id: Date.now(), // Simple ID for removal
+        name: selectedOption.value,
+        type: itemType,
+        originalPrice: originalPrice,
+        cost: cost,
+        originalProfit: originalProfit,
+        promoPrice: promoPrice,
+        quantity: quantity,
+        promoProfit: promoProfit
+    };
+    
+    promotionItems.push(promotionItem);
+    updatePromotionTable();
+    updateSummary();
+    resetItemSelection();
+}
+
+function updatePromotionTable() {
+    const tbody = document.getElementById('promotionItemsBody');
+    const noItemsRow = document.getElementById('noItemsRow');
+    const priceOptimizationRow = document.getElementById('priceOptimizationRow');
+    
+    if (promotionItems.length === 0) {
+        noItemsRow.style.display = '';
+        priceOptimizationRow.style.display = 'none';
+        return;
+    }
+    
+    noItemsRow.style.display = 'none';
+    priceOptimizationRow.style.display = 'block';
+    
+    // Clear existing rows except no items row
+    Array.from(tbody.children).forEach(row => {
+        if (row.id !== 'noItemsRow') {
+            row.remove();
+        }
+    });
+    
+    promotionItems.forEach(item => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${item.name}</td>
+            <td>฿${item.originalPrice.toFixed(2)}</td>
+            <td>฿${item.cost.toFixed(2)}</td>
+            <td>฿${item.originalProfit.toFixed(2)}</td>
+            <td>
+                <input type="number" class="form-control form-control-sm" 
+                       value="${item.promoPrice.toFixed(2)}" 
+                       step="0.01" min="0" 
+                       onchange="updateItemPromoPrice(${item.id}, this.value)"
+                       style="min-width: 100px;">
+            </td>
+            <td>${item.quantity}</td>
+            <td class="${item.promoProfit >= 0 ? 'text-success' : 'text-danger'}">฿${item.promoProfit.toFixed(2)}</td>
+            <td>
+                <button type="button" class="btn btn-sm btn-danger" onclick="removeItem(${item.id})">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function removeItem(itemId) {
+    promotionItems = promotionItems.filter(item => item.id !== itemId);
+    updatePromotionTable();
+    updateSummary();
+}
+
+function updateSummary() {
+    const totalPromoPrice = promotionItems.reduce((sum, item) => sum + (item.promoPrice * item.quantity), 0);
+    const totalCost = promotionItems.reduce((sum, item) => sum + (item.cost * item.quantity), 0);
+    const totalProfit = totalPromoPrice - totalCost;
+    
+    document.getElementById('totalPromoPrice').textContent = `฿${totalPromoPrice.toFixed(2)}`;
+    document.getElementById('totalCost').textContent = `฿${totalCost.toFixed(2)}`;
+    document.getElementById('totalProfit').textContent = `฿${totalProfit.toFixed(2)}`;
+    document.getElementById('totalProfit').className = totalProfit >= 0 ? 'text-success' : 'text-danger';
+    
+    // Enable/disable create button
+    const createBtn = document.getElementById('createPromotionBtn');
+    const promotionName = document.getElementById('promotionName').value.trim();
+    createBtn.disabled = !(promotionName && promotionItems.length > 0);
+}
+
+function resetItemSelection() {
+    document.getElementById('itemType').value = '';
+    document.getElementById('itemSelect').innerHTML = '<option value="">Select Item</option>';
+    document.getElementById('itemSelect').disabled = true;
+    document.getElementById('promoPrice').value = '';
+    document.getElementById('quantity').value = '1';
+    document.getElementById('addItemBtn').disabled = true;
+}
+
+function resetForm() {
+    document.getElementById('promotionForm').reset();
+    promotionItems = [];
+    updatePromotionTable();
+    updateSummary();
+    resetItemSelection();
+}
+
+// Helper function to check if two promotions are similar
+function arePromotionsSimilar(promo1, promo2) {
+    // If names are very similar, consider them duplicates
+    if (promo1.name.toLowerCase() === promo2.name.toLowerCase()) {
+        return true;
+    }
+    
+    // If they have exactly the same items, consider them duplicates
+    if (promo1.promotion && promo2.promotion && 
+        promo1.promotion.length === promo2.promotion.length) {
+        
+        // Sort both promotion items by name for comparison
+        const items1 = [...promo1.promotion].sort((a, b) => a.item.localeCompare(b.item));
+        const items2 = [...promo2.promotion].sort((a, b) => a.item.localeCompare(b.item));
+        
+        // Check if all items match
+        const allItemsMatch = items1.every((item, index) => {
+            return item.item === items2[index].item && 
+                   item.type === items2[index].type;
+        });
+        
+        if (allItemsMatch) {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+function createPromotion(isUpdate = false, promotionId = null) {
+    console.log(`${isUpdate ? 'Updating' : 'Creating'} promotion ${isUpdate ? 'ID: ' + promotionId : ''}`);
+    
+    const name = document.getElementById('promotionName').value.trim();
+    const description = document.getElementById('promotionDescription').value.trim();
+    
+    if (!name || promotionItems.length === 0) {
+        showToast('Please provide a promotion name and add at least one item.', 'error');
+        return;
+    }
+    
+    // If this is a new promotion (not an update), check for duplicates
+    if (!isUpdate) {
+        // Prepare the new promotion object for comparison
+        const newPromotion = {
+            name: name,
+            description: description,
+            promotion: promotionItems.map(item => ({
+                item: item.name,
+                type: item.type,
+                promotion_price: item.promoPrice.toFixed(2),
+                cost: item.cost.toFixed(2),
+                promotion_profit: (item.promoPrice - item.cost).toFixed(2),
+                quantity: item.quantity
+            }))
+        };
+        
+        // Check for existing promotions
+        fetch('/api/promotions')
+            .then(response => response.json())
+            .then(data => {
+                if (data && data.promotions && data.promotions.length > 0) {
+                    // Check if any existing promotion is similar to the new one
+                    const similarPromotion = data.promotions.find(promo => 
+                        arePromotionsSimilar(promo, newPromotion));
+                    
+                    if (similarPromotion) {
+                        showToast(`A similar promotion "${similarPromotion.name}" already exists. Please modify the content to make it unique.`, 'error');
+                        return;
+                    } else {
+                        // No duplicates found, proceed with creation
+                        proceedWithPromotionCreation(name, description, isUpdate, promotionId);
+                    }
+                } else {
+                    // No existing promotions, proceed with creation
+                    proceedWithPromotionCreation(name, description, isUpdate, promotionId);
+                }
+            })
+            .catch(error => {
+                console.error('Error checking for duplicate promotions:', error);
+                // If there's an error checking for duplicates, still allow creation
+                proceedWithPromotionCreation(name, description, isUpdate, promotionId);
+            });
+    } else {
+        // This is an update, proceed directly without duplicate check
+        proceedWithPromotionCreation(name, description, isUpdate, promotionId);
+    }
+}
+
+// Function that continues with promotion creation/update after duplicate check
+function proceedWithPromotionCreation(name, description, isUpdate = false, promotionId = null) {
+    
+    // Create the promotion object
+    const promotion = {
+        name: name,
+        description: description,
+        total_promotion_price: document.getElementById('totalPrice').textContent,
+        total_promotion_cost: document.getElementById('totalCost').textContent,
+        total_promotion_profit: document.getElementById('totalProfit').textContent,
+        created_date: new Date().toISOString().split('T')[0], // YYYY-MM-DD format
+        promotion: promotionItems.map(item => ({
+            item: item.name,
+            type: item.type,
+            promotion_price: item.promoPrice.toFixed(2),
+            cost: item.cost.toFixed(2),
+            promotion_profit: (item.promoPrice - item.cost).toFixed(2),
+            quantity: item.quantity
+        }))
+    };
+    
+    // If this is an update, include the promotion ID
+    if (isUpdate && promotionId) {
+        promotion.id = promotionId;
+    }
+    
+    // Determine the API endpoint and method based on whether this is a create or update
+    const apiEndpoint = isUpdate ? `/api/promotions/${promotionId}` : '/promotion';
+    const method = isUpdate ? 'PUT' : 'POST';
+    
+    console.log(`Sending ${method} request to ${apiEndpoint}`);
+    
+    // Send the data to the server
+    fetch(apiEndpoint, {
+        method: method,
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(promotion)
+    })
+    .then(response => {
+        console.log('Server response status:', response.status);
+        return response.json();
+    })
+    .then(data => {
+        console.log('Server response data:', data);
+        if (data.success) {
+            // Show success message
+            showToast(`Promotion ${isUpdate ? 'updated' : 'created'} successfully!`, 'success');
+            
+            // Reset the form
+            document.getElementById('promotionForm').reset();
+            promotionItems = [];
+            updatePromotionTable();
+            updateSummary();
+            
+            // Reset the button to create mode
+            if (isUpdate) {
+                document.getElementById('createPromotionBtn').innerHTML = '<i class="fas fa-plus me-2"></i>Create Promotion';
+                document.getElementById('promotionForm').removeAttribute('data-promotion-id');
+                
+                // Reset the button click handler
+                const createBtn = document.getElementById('createPromotionBtn');
+                if (createBtn.onclick) {
+                    createBtn.onclick = null;
+                }
+                createBtn.onclick = function(e) {
+                    e.preventDefault();
+                    createPromotion(false);
+                    return false;
+                };
+            }
+            
+            // Close the modal
+            const modalElement = document.getElementById('createPromotionModal');
+            const modal = bootstrap.Modal.getInstance(modalElement);
+            modal.hide();
+            
+            // Refresh the promotions list
+            loadPromotions();
+        } else {
+            showToast(`Error ${isUpdate ? 'updating' : 'creating'} promotion: ${data.message}`, 'error');
+        }
+        
+        // Re-enable create button
+        createBtn.disabled = false;
+        createBtn.innerHTML = '<i class="fas fa-save me-2"></i>Create Promotion';
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Error creating promotion. Please try again.', 'error');
+        
+        // Re-enable create button on error
+        createBtn.disabled = false;
+        createBtn.innerHTML = '<i class="fas fa-save me-2"></i>Create Promotion';
+    });
+}
+
+function loadPriceSuggestions(itemName) {
+    const priceSuggestionsRow = document.getElementById('priceSuggestionsRow');
+    const suggestionCards = document.getElementById('suggestionCards');
+    const historicalInfo = document.getElementById('historicalInfo');
+    
+    // Show loading state
+    suggestionCards.innerHTML = `
+        <div class="col-12">
+            <div class="loading-suggestions">
+                <i class="fas fa-spinner fa-spin fa-2x mb-3"></i>
+                <div>Loading AI price suggestions...</div>
+            </div>
+        </div>
+    `;
+    priceSuggestionsRow.style.display = 'block';
+    
+    // Fetch suggestions from API
+    fetch(`/api/price-suggestions/${encodeURIComponent(itemName)}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displayPriceSuggestions(data.suggestions, data.historical_data);
+            } else {
+                showNoSuggestions(data.message || 'Unable to load price suggestions');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading price suggestions:', error);
+            showNoSuggestions('Error loading price suggestions');
+        });
+}
+
+function displayPriceSuggestions(suggestions, historicalData) {
+    const suggestionCards = document.getElementById('suggestionCards');
+    const historicalInfo = document.getElementById('historicalInfo');
+    
+    if (!suggestions || suggestions.length === 0) {
+        showNoSuggestions('No historical data available for price suggestions');
+        return;
+    }
+    
+    // Create suggestion cards
+    let cardsHTML = '';
+    suggestions.forEach(suggestion => {
+        const typeColors = {
+            'conservative': 'success',
+            'moderate': 'warning',
+            'aggressive': 'danger',
+            'popular': 'purple'
+        };
+        
+        const typeIcons = {
+            'conservative': 'shield-alt',
+            'moderate': 'balance-scale',
+            'aggressive': 'rocket',
+            'popular': 'star'
+        };
+        
+        const riskColors = {
+            'Low': 'success',
+            'Medium': 'warning', 
+            'High': 'danger'
+        };
+        
+        cardsHTML += `
+            <div class="col-md-6 col-lg-3">
+                <div class="suggestion-card ${suggestion.type}" onclick="selectSuggestion(${suggestion.price})">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div class="suggestion-discount">
+                            <i class="fas fa-${typeIcons[suggestion.type]} me-1"></i>
+                            ${suggestion.discount_percent}% OFF
+                        </div>
+                        <span class="badge bg-${riskColors[suggestion.risk_level]} badge-sm">
+                            ${suggestion.risk_level} Risk
+                        </span>
+                    </div>
+                    <div class="suggestion-price text-${typeColors[suggestion.type]} mb-2">
+                        ฿${suggestion.price}
+                    </div>
+                    <div class="suggestion-description mb-2">
+                        ${suggestion.description}
+                    </div>
+                    <div class="suggestion-explanation mb-3">
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle me-1"></i>
+                            ${suggestion.explanation}
+                        </small>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="suggestion-profit text-${typeColors[suggestion.type]}">
+                            <i class="fas fa-chart-line me-1"></i>
+                            ${suggestion.profit_margin}%
+                        </div>
+                        <div class="text-muted small">
+                            ${suggestion.profit_retention}% retained
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    suggestionCards.innerHTML = cardsHTML;
+    
+    // Display historical data if available
+    if (historicalData) {
+        document.getElementById('avgPrice').textContent = `฿${historicalData.avg_price}`;
+        document.getElementById('priceRange').textContent = `฿${historicalData.min_price} - ฿${historicalData.max_price}`;
+        document.getElementById('avgCostDisplay').textContent = `฿${historicalData.avg_cost}`;
+        document.getElementById('totalSales').textContent = historicalData.total_sales;
+        historicalInfo.style.display = 'block';
+    }
+}
+
+function showNoSuggestions(message) {
+    const suggestionCards = document.getElementById('suggestionCards');
+    suggestionCards.innerHTML = `
+        <div class="col-12">
+            <div class="no-suggestions">
+                <i class="fas fa-info-circle fa-2x mb-3"></i>
+                <div class="h6">${message}</div>
+                <small>Suggestions will appear when historical data is available</small>
+            </div>
+        </div>
+    `;
+    document.getElementById('historicalInfo').style.display = 'none';
+}
+
+function updateItemPromoPrice(itemId, newPrice) {
+    const price = parseFloat(newPrice);
+    if (isNaN(price) || price < 0) return;
+    
+    // Find and update the item
+    const itemIndex = promotionItems.findIndex(item => item.id === itemId);
+    if (itemIndex !== -1) {
+        promotionItems[itemIndex].promoPrice = price;
+        promotionItems[itemIndex].promoProfit = (price - promotionItems[itemIndex].cost) * promotionItems[itemIndex].quantity;
+        
+        // Update the table and summary
+        updatePromotionTable();
+        updateSummary();
+    }
+}
+
+function analyzePromotionPricing() {
+    if (promotionItems.length === 0) {
+        alert('Please add items to your promotion first.');
+        return;
+    }
+    
+    const optimizationContainer = document.getElementById('optimizationContainer');
+    
+    // Show loading state
+    optimizationContainer.innerHTML = `
+        <div class="text-center py-4">
+            <i class="fas fa-spinner fa-spin fa-2x mb-3 text-success"></i>
+            <div class="h6">Analyzing pricing for ${promotionItems.length} items...</div>
+            <small class="text-muted">This may take a moment</small>
+        </div>
+    `;
+    
+    // Analyze each item in the promotion
+    const analysisPromises = promotionItems.map(item => 
+        fetch(`/api/price-suggestions/${encodeURIComponent(item.name)}`)
+            .then(response => response.json())
+            .then(data => ({ item, suggestions: data }))
+    );
+    
+    Promise.all(analysisPromises)
+        .then(results => {
+            displayPromotionOptimization(results);
+        })
+        .catch(error => {
+            console.error('Error analyzing promotion pricing:', error);
+            optimizationContainer.innerHTML = `
+                <div class="alert alert-danger text-center">
+                    <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
+                    <div class="h6">Error analyzing pricing</div>
+                    <small>Please try again later</small>
+                </div>
+            `;
+        });
+}
+
+function displayPromotionOptimization(results) {
+    const optimizationContainer = document.getElementById('optimizationContainer');
+    let optimizationHTML = '';
+    
+    results.forEach(({ item, suggestions }) => {
+        if (suggestions.success && suggestions.suggestions.length > 0) {
+            optimizationHTML += createItemOptimizationCard(item, suggestions.suggestions);
+        } else {
+            optimizationHTML += createNoDataCard(item);
+        }
+    });
+    
+    optimizationContainer.innerHTML = `
+        <div class="row g-3">
+            ${optimizationHTML}
+        </div>
+        <div class="text-center mt-4">
+            <button type="button" class="btn btn-outline-secondary" onclick="applyAllRecommendations()">
+                <i class="fas fa-magic me-1"></i>Apply All Best Recommendations
+            </button>
+        </div>
+    `;
+}
+
+function createItemOptimizationCard(item, suggestions) {
+    const bestSuggestion = suggestions.find(s => s.type === 'moderate') || suggestions[0];
+    const currentDiscount = Math.round((1 - item.promoPrice / item.originalPrice) * 100);
+    
+    let suggestionsHTML = '';
+    suggestions.forEach(suggestion => {
+        const isRecommended = suggestion.type === 'moderate';
+        suggestionsHTML += `
+            <div class="suggestion-option ${isRecommended ? 'recommended' : ''}" 
+                 onclick="applySuggestionToItem(${item.id}, ${suggestion.price})">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>฿${suggestion.price}</strong>
+                        <span class="badge bg-primary ms-1">${suggestion.discount_percent}% OFF</span>
+                        ${isRecommended ? '<span class="badge bg-success ms-1">Recommended</span>' : ''}
+                    </div>
+                    <div class="text-muted small">
+                        ${suggestion.profit_margin}% margin
+                    </div>
+                </div>
+                <div class="small text-muted mt-1">
+                    ${suggestion.explanation}
+                </div>
+            </div>
+        `;
+    });
+    
+    return `
+        <div class="col-md-6">
+            <div class="card optimization-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="mb-0">
+                            <i class="fas fa-tag me-1"></i>${item.name}
+                        </h6>
+                        <div class="text-muted small">
+                            Current: ฿${item.promoPrice.toFixed(2)} (${currentDiscount}% OFF)
+                        </div>
+                    </div>
+                    <div class="suggestions-list">
+                        ${suggestionsHTML}
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function createNoDataCard(item) {
+    return `
+        <div class="col-md-6">
+            <div class="card optimization-card">
+                <div class="card-body text-center">
+                    <h6 class="mb-3">
+                        <i class="fas fa-tag me-1"></i>${item.name}
+                    </h6>
+                    <div class="text-muted">
+                        <i class="fas fa-info-circle fa-2x mb-2"></i>
+                        <div>No historical data available</div>
+                        <small>Current price: ฿${item.promoPrice.toFixed(2)}</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function applySuggestionToItem(itemId, suggestedPrice) {
+    updateItemPromoPrice(itemId, suggestedPrice);
+    
+    // Visual feedback
+    event.target.closest('.suggestion-option').style.background = '#d4edda';
+    setTimeout(() => {
+        event.target.closest('.suggestion-option').style.background = '';
+    }, 1000);
+}
+
+function applyAllRecommendations() {
+    const recommendedOptions = document.querySelectorAll('.suggestion-option.recommended');
+    recommendedOptions.forEach(option => {
+        option.click();
+    });
+}
+
+// Listen for form changes to update create button state
+document.addEventListener('input', function(e) {
+    if (e.target.id === 'promotionName') {
+        updateSummary();
+    }
+});
+
+// Completely new function that doesn't depend on validation state
+function addItemManually() {
+    console.log('Add item manually triggered');
+    
+    // Get form values
+    const itemType = document.getElementById('itemType');
+    const itemSelect = document.getElementById('itemSelect');
+    const promoPrice = document.getElementById('promoPrice');
+    const quantity = document.getElementById('quantity');
+    
+    // Detailed logging for debugging
+    console.log('Form values:', {
+        itemType: itemType.value,
+        itemSelect: itemSelect.value,
+        promoPrice: promoPrice.value,
+        quantity: quantity.value
+    });
+    
+    // Comprehensive validation
+    if (!itemType.value) {
+        showToast('Please select an item type (Service or Product)', 'error');
+        itemType.focus();
+        return false;
+    }
+    
+    if (!itemSelect.value) {
+        showToast('Please select a specific item', 'error');
+        itemSelect.focus();
+        return false;
+    }
+    
+    // Make sure promo price is set properly from the selected item
+    if (!promoPrice.value || parseFloat(promoPrice.value) <= 0) {
+        // Auto-populate price from selected item
+        const selectedOption = itemSelect.options[itemSelect.selectedIndex];
+        promoPrice.value = selectedOption.dataset.price;
+        console.log('Auto-fixed promo price to:', promoPrice.value);
+    }
+    
+    if (!quantity.value || parseInt(quantity.value) <= 0) {
+        showToast('Please enter a valid quantity (greater than 0)', 'error');
+        quantity.focus();
+        return false;
+    }
+    
+    // All validations passed, add the item
+    try {
+        // Direct call without using the return value
+        addItemToPromotion();
+        console.log('Item added successfully');
+    } catch (error) {
+        // Just log the error but don't show popup
+        console.error('Error adding item:', error);
+        // No alert to avoid popup
+    }
+    
+    return true;
+}
+
+// Function to handle promotion form submission with validation
+function submitPromotionForm() {
+    // Get form values
+    const promotionName = document.getElementById('promotionName').value.trim();
+    
+    // Validate form
+    if (!promotionName) {
+        alert('Please enter a promotion name');
+        document.getElementById('promotionName').focus();
+        return false;
+    }
+    
+    if (promotionItems.length === 0) {
+        alert('Please add at least one item to the promotion');
+        return false;
+    }
+    
+    // All validations passed, submit the form directly
+    console.log('Creating promotion:', promotionName);
+    createPromotion();
+    
+    // Prevent default form submission
+    return false;
+}
+
+// Function to load and display promotions
+function loadPromotions(searchTerm = '') {
+    console.log('=== loadPromotions() START ===');
+    console.log('Loading promotions with search:', searchTerm);
+    
+    // Show loading state
+    document.getElementById('promotionsList').innerHTML = `
+        <tr>
+            <td colspan="7" class="text-center py-4">
+                <i class="fas fa-spinner fa-spin me-2"></i>Loading promotions...
+            </td>
+        </tr>
+    `;
+    
+    // Fetch promotions from API
+    fetch('/api/promotions')
+        .then(response => {
+            console.log('API response status:', response.status);
+            return response.json();
+        })
+        .then(data => {
+            console.log('API response data:', data);
+            const tableBody = document.getElementById('promotionsList');
+            
+            if (data && data.promotions && data.promotions.length > 0) {
+                // Filter promotions based on search term if provided
+                let filteredPromotions = data.promotions;
+                if (searchTerm) {
+                    console.log('Filtering promotions by search term:', searchTerm);
+                    filteredPromotions = filteredPromotions.filter(promotion => 
+                        promotion.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        (promotion.description && promotion.description.toLowerCase().includes(searchTerm.toLowerCase()))
+                    );
+                }
+                
+                // Apply sorting if selected
+                const sortBy = document.getElementById('sortBy')?.value;
+                if (sortBy) {
+                    console.log('Sorting promotions by:', sortBy);
+                    switch (sortBy) {
+                        case 'profit':
+                            filteredPromotions.sort((a, b) => parseFloat(b.total_promotion_profit) - parseFloat(a.total_promotion_profit));
+                            break;
+                        case 'price':
+                            filteredPromotions.sort((a, b) => parseFloat(b.total_promotion_price) - parseFloat(a.total_promotion_price));
+                            break;
+                        case 'date':
+                            filteredPromotions.sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
+                            break;
+                    }
+                }
+                
+                // Apply profit filtering if selected
+                const filterProfit = document.getElementById('filterProfit')?.value;
+                if (filterProfit) {
+                    console.log('Filtering by profit:', filterProfit);
+                    switch (filterProfit) {
+                        case 'high':
+                            filteredPromotions.sort((a, b) => parseFloat(b.total_promotion_profit) - parseFloat(a.total_promotion_profit));
+                            break;
+                        case 'low':
+                            filteredPromotions.sort((a, b) => parseFloat(a.total_promotion_profit) - parseFloat(b.total_promotion_profit));
+                            break;
+                    }
+                }
+                
+                // Show table rows if we have results
+                if (filteredPromotions.length > 0) {
+                    // Generate table rows
+                    tableBody.innerHTML = filteredPromotions.map(promotion => {
+                        // Format numbers
+                        const price = parseFloat(promotion.total_promotion_price).toFixed(2);
+                        const cost = parseFloat(promotion.total_promotion_cost).toFixed(2);
+                        const profit = parseFloat(promotion.total_promotion_profit).toFixed(2);
+                        const profitClass = parseFloat(profit) >= 0 ? 'text-success' : 'text-danger';
+                        
+                        return `
+                            <tr>
+                                <td>${promotion.created_date}</td>
+                                <td>${promotion.name}</td>
+                                <td>${promotion.description || '-'}</td>
+                                <td>${price}</td>
+                                <td>${cost}</td>
+                                <td class="${profitClass}">${profit}</td>
+                                <td>
+                                    <div class="btn-group">
+                                        <button class="btn btn-sm btn-outline-secondary" onclick="editPromotion(${promotion.id}); return false;">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger" onclick="deletePromotion(${promotion.id})">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        `;
+                    }).join('');
+                } else {
+                    // No results after filtering
+                    tableBody.innerHTML = `
+                        <tr>
+                            <td colspan="7" class="text-center py-4">
+                                <i class="fas fa-search me-2"></i>No promotions found matching "${searchTerm}"
+                            </td>
+                        </tr>
+                    `;
+                }
+            } else {
+                // No promotions at all
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="text-center py-4">
+                            <i class="fas fa-info-circle me-2"></i>No promotions have been created yet
+                        </td>
+                    </tr>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('Error loading promotions:', error);
+            document.getElementById('promotionsList').innerHTML = `
+                <tr>
+                    <td colspan="7" class="text-center py-4 text-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Error loading promotions
+                    </td>
+                </tr>
+            `;
+        });
+    
+    console.log('=== loadPromotions() END ===');
+}
+
+// Function to create a promotion card element
+function createPromotionCard(promotion) {
+    const col = document.createElement('div');
+    col.className = 'col-md-6 col-lg-4 mb-4';
+    
+    // Calculate number of items
+    const itemCount = promotion.promotion ? promotion.promotion.length : 0;
+    
+    // Format profit and determine profit class
+    const profit = parseFloat(promotion.total_promotion_profit);
+    const profitClass = profit >= 0 ? 'text-success' : 'text-danger';
+    
+    col.innerHTML = `
+        <div class="card h-100 promotion-item-card">
+            <div class="card-body">
+                <h5 class="card-title">${promotion.name}</h5>
+                <p class="card-text text-muted small">
+                    ${promotion.description || 'No description'}
+                </p>
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <div class="promotion-stat">
+                            <div class="stat-value">฿${parseFloat(promotion.total_promotion_price).toFixed(2)}</div>
+                            <div class="stat-label"><i class="fas fa-tag me-1"></i>Price</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="promotion-stat">
+                            <div class="stat-value ${profitClass}">฿${parseFloat(promotion.total_promotion_profit).toFixed(2)}</div>
+                            <div class="stat-label"><i class="fas fa-chart-line me-1"></i>Profit</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-text">
+                    <div class="d-flex justify-content-between">
+                        <span><i class="fas fa-shopping-basket me-1"></i>${itemCount} item${itemCount !== 1 ? 's' : ''}</span>
+                        <span class="text-muted"><i class="fas fa-calendar-alt me-1"></i>${promotion.created_date}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer bg-transparent border-0 pt-0">
+                <button class="btn btn-sm btn-outline-primary w-100" onclick="viewPromotionDetails(${promotion.id})">
+                    <i class="fas fa-eye me-1"></i>View Details
+                </button>
+            </div>
+        </div>
+    `;
+    
+    return col;
+}
+
+// Function to view promotion details
+function viewPromotionDetails(promotionId) {
+    console.log('Viewing promotion details for ID:', promotionId);
+    
+    // Fetch the specific promotion details
+    fetch(`/api/promotions/${promotionId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.promotion) {
+                // Create a more detailed view (for now just use toast)
+                showToast(`Viewing details for promotion: ${data.promotion.name}`, 'info');
+                // Future enhancement: Show detailed modal with all items
+            } else {
+                showToast('Could not find promotion details', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching promotion details:', error);
+            showToast('Error loading promotion details', 'error');
+        });
+}
+
+// Simple direct test function for editing - no API calls for initial debugging
+function testEditPromotion(id) {
+    console.log('TEST: Opening edit modal for ID:', id);
+    try {
+        // Just try to open the modal
+        const modalElement = document.getElementById('createPromotionModal');
+        if (!modalElement) {
+            console.error('TEST: Modal element not found!');
+            return;
+        }
+        
+        console.log('TEST: Found modal element, trying to initialize Bootstrap modal');
+        const modal = new bootstrap.Modal(modalElement);
+        console.log('TEST: Bootstrap modal created, trying to show');
+        modal.show();
+        console.log('TEST: Modal show method called');
+        
+        // Update the form with test data
+        document.getElementById('promotionName').value = 'Test Edit - ID ' + id;
+        document.getElementById('promotionDescription').value = 'Test description';
+        
+        // Update button text
+        document.getElementById('createPromotionBtn').innerHTML = '<i class="fas fa-save me-2"></i>Test Update';
+        
+        console.log('TEST: Test edit function completed');
+    } catch (error) {
+        console.error('TEST: Error in test edit function:', error);
+    }
+}
+
+// Function to edit an existing promotion using the new edit modal
+function editPromotion(promotionId) {
+    console.log('Editing promotion ID:', promotionId);
+    
+    try {
+        // Show a loading toast
+        showToast('Loading promotion data...', 'info');
+        
+        // Use the direct API endpoint for a specific promotion
+        fetch(`/api/promotions/${promotionId}`)
+            .then(response => {
+                console.log(`API response status for promotion ${promotionId}:`, response.status);
+                if (!response.ok) {
+                    console.error('API response not OK:', response.status);
+                    showToast(`Error fetching promotion: ${response.status}`, 'error');
+                    return {};
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Edit promotion data received:', data);
+                
+                // Check if we received valid promotion data
+                if (data && data.promotion) {
+                    const promotion = data.promotion;
+                    console.log('Found promotion to edit:', promotion);
+                    
+                    // Populate the edit form with existing data
+                    document.getElementById('editPromotionId').value = promotion.id;
+                    document.getElementById('editPromotionName').value = promotion.name;
+                    document.getElementById('editPromotionDescription').value = promotion.description || '';
+                    
+                    // Create temporary array for edit items
+                    let editItems = [];
+                    
+                    // Add existing items to the edit form
+                    if (promotion.promotion && promotion.promotion.length > 0) {
+                        promotion.promotion.forEach(item => {
+                            editItems.push({
+                                id: Date.now() + Math.floor(Math.random() * 1000),
+                                name: item.item,
+                                type: item.type,
+                                promoPrice: parseFloat(item.promotion_price),
+                                cost: parseFloat(item.cost),
+                                quantity: parseInt(item.quantity || 1)
+                            });
+                        });
+                    }
+                    
+                    // Update the items table in the edit modal
+                    updateEditItemsTable(editItems);
+                    
+                    // Update summary in the edit modal
+                    updateEditSummary(editItems);
+                    
+                    // Open the edit modal
+                    const modal = new bootstrap.Modal(document.getElementById('editPromotionModal'));
+                    modal.show();
+                    
+                    // Store the items in a data attribute for later use
+                    document.getElementById('editPromotionForm').setAttribute('data-items', JSON.stringify(editItems));
+                    
+                } else {
+                    console.error('Invalid data format or promotion not found:', data);
+                    showToast('Could not find promotion data to edit', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching promotion for edit:', error);
+                showToast('Error loading promotion for editing', 'error');
+            });
+    } catch (error) {
+        console.error('Exception in editPromotion function:', error);
+        showToast('Error opening edit form', 'error');
+    }
+}
+
+// Function to update the items table in the edit modal
+function updateEditItemsTable(items) {
+    const tableBody = document.getElementById('editItemsTable');
+    tableBody.innerHTML = '';
+    
+    if (items && items.length > 0) {
+        items.forEach(item => {
+            const profit = (item.promoPrice - item.cost) * item.quantity;
+            const profitClass = profit >= 0 ? 'text-success' : 'text-danger';
+            
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${item.name}</td>
+                <td>${item.type}</td>
+                <td>฿${item.promoPrice.toFixed(2)}</td>
+                <td>฿${item.cost.toFixed(2)}</td>
+                <td>
+                    <input type="number" class="form-control form-control-sm edit-price-input" 
+                           data-item-id="${item.id}" value="${item.promoPrice.toFixed(2)}" 
+                           min="0" step="0.01" onchange="updateEditItemPrice(${item.id}, this.value)">
+                </td>
+                <td class="${profitClass}">฿${profit.toFixed(2)}</td>
+                <td>
+                    <input type="number" class="form-control form-control-sm" 
+                           value="${item.quantity}" min="1" max="100" step="1"
+                           onchange="updateEditItemQuantity(${item.id}, this.value)">
+                </td>
+                <td>
+                    <button class="btn btn-sm btn-outline-danger" onclick="removeEditItem(${item.id})">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </td>
+            `;
+            tableBody.appendChild(row);
+        });
+    } else {
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="8" class="text-center py-3">
+                    <i class="fas fa-info-circle me-2"></i>No items in this promotion
+                </td>
+            </tr>
+        `;
+    }
+}
+
+// Function to update the summary in the edit modal
+function updateEditSummary(items) {
+    let totalPrice = 0;
+    let totalCost = 0;
+    
+    if (items && items.length > 0) {
+        items.forEach(item => {
+            totalPrice += item.promoPrice * item.quantity;
+            totalCost += item.cost * item.quantity;
+        });
+    }
+    
+    const totalProfit = totalPrice - totalCost;
+    const profitClass = totalProfit >= 0 ? 'text-success' : 'text-danger';
+    
+    document.getElementById('editTotalPrice').innerText = `฿${totalPrice.toFixed(2)}`;
+    document.getElementById('editTotalCost').innerText = `฿${totalCost.toFixed(2)}`;
+    
+    const profitElement = document.getElementById('editTotalProfit');
+    profitElement.innerText = `฿${totalProfit.toFixed(2)}`;
+    profitElement.className = `summary-value ${profitClass}`;
+}
+
+// Function to update an item's price in the edit modal
+function updateEditItemPrice(itemId, newPrice) {
+    const formElement = document.getElementById('editPromotionForm');
+    const itemsJson = formElement.getAttribute('data-items');
+    
+    if (itemsJson) {
+        let items = JSON.parse(itemsJson);
+        const item = items.find(i => i.id === itemId);
+        if (item) {
+            item.promoPrice = parseFloat(newPrice);
+            updateEditItemsTable(items);
+            updateEditSummary(items);
+            formElement.setAttribute('data-items', JSON.stringify(items));
+        }
+    }
+}
+
+// Function to update an item's quantity in the edit modal
+function updateEditItemQuantity(itemId, newQuantity) {
+    const formElement = document.getElementById('editPromotionForm');
+    const itemsJson = formElement.getAttribute('data-items');
+    
+    if (itemsJson) {
+        let items = JSON.parse(itemsJson);
+        const item = items.find(i => i.id === itemId);
+        if (item) {
+            item.quantity = parseInt(newQuantity);
+            updateEditItemsTable(items);
+            updateEditSummary(items);
+            formElement.setAttribute('data-items', JSON.stringify(items));
+        }
+    }
+}
+
+// Function to remove an item from the edit modal
+function removeEditItem(itemId) {
+    const formElement = document.getElementById('editPromotionForm');
+    const itemsJson = formElement.getAttribute('data-items');
+    
+    if (itemsJson) {
+        let items = JSON.parse(itemsJson);
+        items = items.filter(i => i.id !== itemId);
+        updateEditItemsTable(items);
+        updateEditSummary(items);
+        formElement.setAttribute('data-items', JSON.stringify(items));
+    }
+}
+
+// Function to save the updated promotion
+function updatePromotion() {
+    const promotionId = document.getElementById('editPromotionId').value;
+    const name = document.getElementById('editPromotionName').value.trim();
+    const description = document.getElementById('editPromotionDescription').value.trim();
+    
+    if (!promotionId) {
+        showToast('Missing promotion ID', 'error');
+        return;
+    }
+    
+    if (!name) {
+        showToast('Please enter a promotion name', 'error');
+        return;
+    }
+    
+    const formElement = document.getElementById('editPromotionForm');
+    const itemsJson = formElement.getAttribute('data-items');
+    let items = [];
+    
+    if (itemsJson) {
+        items = JSON.parse(itemsJson);
+    }
+    
+    if (items.length === 0) {
+        showToast('Please add at least one item to the promotion', 'error');
+        return;
+    }
+    
+    // Calculate totals
+    let totalPrice = 0;
+    let totalCost = 0;
+    
+    items.forEach(item => {
+        totalPrice += item.promoPrice * item.quantity;
+        totalCost += item.cost * item.quantity;
+    });
+    
+    const totalProfit = totalPrice - totalCost;
+    
+    // Create the updated promotion object
+    const promotion = {
+        id: parseInt(promotionId),
+        name: name,
+        description: description,
+        total_promotion_price: totalPrice.toFixed(2),
+        total_promotion_cost: totalCost.toFixed(2),
+        total_promotion_profit: totalProfit.toFixed(2),
+        created_date: new Date().toISOString().split('T')[0], // Keep today's date
+        promotion: items.map(item => ({
+            item: item.name,
+            type: item.type,
+            promotion_price: item.promoPrice.toFixed(2),
+            cost: item.cost.toFixed(2),
+            promotion_profit: (item.promoPrice - item.cost).toFixed(2),
+            quantity: item.quantity
+        }))
+    };
+    
+    console.log('Sending update request with data:', promotion);
+    
+    // Show loading state
+    const updateBtn = document.getElementById('updatePromotionBtn');
+    updateBtn.disabled = true;
+    updateBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Updating...';
+    
+    // Send the update request
+    fetch(`/api/promotions/${promotionId}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(promotion)
+    })
+    .then(response => {
+        console.log('Update response status:', response.status);
+        if (!response.ok) {
+            // Try fallback to POST with ID included if PUT fails
+            console.log('PUT failed, trying POST fallback');
+            return fetch('/promotion', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(promotion)
+            });
+        }
+        return response;
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Server response:', data);
+        
+        // Reset button state
+        updateBtn.disabled = false;
+        updateBtn.innerHTML = '<i class="fas fa-save me-2"></i>Update Promotion';
+        
+        if (data.success) {
+            // Show success message
+            showToast('Promotion updated successfully!', 'success');
+            
+            // Close the modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('editPromotionModal'));
+            if (modal) {
+                modal.hide();
+            }
+            
+            // Refresh the promotions list
+            setTimeout(() => {
+                loadPromotions();
+            }, 500);
+        } else {
+            showToast(`Error updating promotion: ${data.message || 'Unknown error'}`, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error updating promotion:', error);
+        showToast('An error occurred while updating the promotion', 'error');
+        
+        // Reset button state
+        updateBtn.disabled = false;
+        updateBtn.innerHTML = '<i class="fas fa-save me-2"></i>Update Promotion';
+    });
+}
+
+// Function to delete a promotion
+function deletePromotion(promotionId) {
+    console.log('Deleting promotion ID:', promotionId);
+    
+    // Confirm before deleting
+    if (confirm('Are you sure you want to delete this promotion? This action cannot be undone.')) {
+        fetch(`/api/promotions/${promotionId}`, {
+            method: 'DELETE',
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast('Promotion deleted successfully', 'success');
+                // Reload the promotions list
+                loadPromotions();
+            } else {
+                showToast('Error deleting promotion: ' + (data.message || 'Unknown error'), 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error deleting promotion:', error);
+            showToast('Error deleting promotion', 'error');
+        });
+    }
+}
+
+// Initialize form when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM fully loaded');
+    
+    // Direct API test
+    console.log('Testing API with direct fetch...');
+    fetch('/api/promotions')
+        .then(response => {
+            console.log('DIRECT API TEST - Status:', response.status);
+            return response.json();
+        })
+        .then(data => {
+            console.log('DIRECT API TEST - Data received:', data);
+        })
+        .catch(error => {
+            console.error('DIRECT API TEST - Error:', error);
+        });
+    
+    // Set up all event listeners
+    setupEventListeners();
+    populateItemSelect();
+    validateAddButton();
+    resetForm();
+    
+    // Load promotions on page load
+    console.log('Calling loadPromotions() function...');
+    loadPromotions();
+    
+    // Set up search and filter event listeners
+    document.getElementById('searchPromotion').addEventListener('input', debounce(loadPromotions, 300));
+    document.getElementById('filterProfit').addEventListener('change', loadPromotions);
+    document.getElementById('sortBy').addEventListener('change', loadPromotions);
+    
+    // Add promotion name input listener for form validation
+    document.getElementById('promotionName').addEventListener('input', function() {
+        updateSummary();
+    });
+    
+    document.getElementById('promotionDescription').addEventListener('input', function() {
+        updateSummary();
+    });
+    
+    // Initial button state update
+    updateSummary();
+    validateAddButton();
+});
+</script>
+
+{% endblock %}
