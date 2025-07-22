@@ -49,6 +49,7 @@
                                     <option value="all" selected>All Items</option>
                                     <option value="service">Services Only</option>
                                     <option value="product">Products Only</option>
+                                    <option value="promotion">Promotions Only</option>
                                 </select>
                             </div>
                             <label for="item" class="form-label">Item/Service <i class="text-danger">*</i></label>
@@ -81,7 +82,7 @@
                             <label for="price" class="form-label">Price <i class="text-danger">*</i> <span id="costInfo" class="small text-muted"></span></label>
                             <div class="input-group">
                                 <span class="input-group-text">฿</span>
-                                <input type="number" class="form-control" name="price" id="price" step="10.00" required>
+                                <input type="number" class="form-control" name="price" id="price" step="10.00">
                                 <div class="invalid-feedback">Please enter a valid price.</div>
                             </div>
                             <small class="form-text text-muted">Prices can be set lower than cost.</small>
@@ -111,8 +112,10 @@
 let customers = [];
 let services = [];
 let inventory = [];
+let promotions = [];
 let costMap = {};
 let priceMap = {};
+let typeMap = {};
 
 // Function to update profit margin visualization
 function updateProfitMargin(price, cost) {
@@ -160,17 +163,77 @@ function updateProfitMargin(price, cost) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize form validation
-    const forms = document.querySelectorAll('.needs-validation');
-    Array.from(forms).forEach(form => {
-        form.addEventListener('submit', event => {
-            if (!form.checkValidity()) {
-                event.preventDefault();
-                event.stopPropagation();
+    // Replace bootstrap validation with custom validation
+    const jobForm = document.getElementById('jobForm');
+    if (jobForm) {
+        // Remove the bootstrap validation
+        jobForm.classList.remove('needs-validation');
+        
+        // Add our custom submit handler
+        jobForm.addEventListener('submit', function(event) {
+            // Always prevent default submission first
+            event.preventDefault();
+            
+            // Get all required form fields
+            const date = document.getElementById('date').value;
+            const customer = document.getElementById('customer').value;
+            const item = document.getElementById('item').value;
+            const price = document.getElementById('price').value;
+            const itemType = typeMap[item] || '';
+            
+            // Validation flags
+            let isValid = true;
+            let errorMessage = '';
+            
+            // Check date
+            if (!date) {
+                isValid = false;
+                errorMessage = 'Please select a date';
+                document.getElementById('date').classList.add('is-invalid');
+            } else {
+                document.getElementById('date').classList.remove('is-invalid');
             }
-            form.classList.add('was-validated');
-        }, false);
-    });
+            
+            // Check customer
+            if (!customer) {
+                isValid = false;
+                errorMessage = 'Please select a customer';
+                document.getElementById('customer').classList.add('is-invalid');
+            } else {
+                document.getElementById('customer').classList.remove('is-invalid');
+            }
+            
+            // Check item
+            if (!item) {
+                isValid = false;
+                errorMessage = 'Please select an item or service';
+                document.getElementById('item').classList.add('is-invalid');
+            } else {
+                document.getElementById('item').classList.remove('is-invalid');
+            }
+            
+            // Special handling for price based on item type
+            if (itemType !== 'promotion' && (!price || isNaN(parseFloat(price)) || parseFloat(price) <= 0)) {
+                isValid = false;
+                errorMessage = 'Please enter a valid price';
+                document.getElementById('price').classList.add('is-invalid');
+            } else {
+                document.getElementById('price').classList.remove('is-invalid');
+            }
+            
+            // If all valid, submit the form
+            if (isValid) {
+                console.log('Form is valid, submitting');
+                jobForm.submit();
+            } else {
+                console.error('Form validation failed:', errorMessage);
+                // Show error message - you can use alert or another method
+                if (errorMessage) {
+                    alert(errorMessage);
+                }
+            }
+        });
+    }
     
     if (document.getElementById('date')) {
         document.getElementById('date').valueAsDate = new Date();
@@ -226,6 +289,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         itemSel.appendChild(opt);
                         costMap[s.name] = s.cost;
                         priceMap[s.name] = s.price;
+                        typeMap[s.name] = 'service';
                         itemSet.add(s.name);
                     }
                 });
@@ -242,9 +306,31 @@ document.addEventListener('DOMContentLoaded', function() {
                         itemSel.appendChild(opt);
                         costMap[i.name] = i.cost;
                         priceMap[i.name] = i.retail_price;
+                        typeMap[i.name] = 'product';
                         itemSet.add(i.name);
                     }
                 });
+            }
+            
+            // Add promotions if category is 'all' or 'promotion'
+            if (category === 'all' || category === 'promotion') {
+                if (promotions && promotions.length > 0) {
+                    promotions.forEach(p => {
+                        if (!itemSet.has(p.name)) {
+                            let opt = document.createElement('option');
+                            opt.value = p.name;
+                            opt.textContent = p.name + ' (Promotion)';
+                            opt.dataset.type = 'promotion';
+                            opt.dataset.id = p.id; // Store promotion ID for reference
+                            itemSel.appendChild(opt);
+                            // Use the promotion's cost, price and profit from the API response
+                            costMap[p.name] = parseFloat(p.total_promotion_cost);
+                            priceMap[p.name] = parseFloat(p.total_promotion_price);
+                            typeMap[p.name] = 'promotion';
+                            itemSet.add(p.name);
+                        }
+                    });
+                }
             }
         }
         
@@ -267,6 +353,18 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .then(invData => {
                 inventory = invData;
+                return fetch('/api/promotions?_=' + new Date().getTime());
+            })
+            .then(r => {
+                if (!r.ok) {
+                    throw new Error('Network response was not ok: ' + r.statusText);
+                }
+                return r.json();
+            })
+            .then(promoData => {
+                if (promoData && promoData.promotions) {
+                    promotions = promoData.promotions;
+                }
                 populateItemDropdown('all'); // Initially populate with all items
 
                 // Add event listener for category filter
@@ -284,8 +382,22 @@ document.addEventListener('DOMContentLoaded', function() {
             // Set price and cost fields
             const price = priceMap[iname] !== undefined ? priceMap[iname] : '';
             const cost = costMap[iname] !== undefined ? costMap[iname] : 0;
+            const itemType = typeMap[iname] || '';
             
-            document.getElementById('price').value = price;
+            // Set the price field and ensure it's properly formatted
+            const priceField = document.getElementById('price');
+            priceField.value = price;
+            
+            // Remove any validation errors on price field when selecting a promotion
+            if (itemType === 'promotion') {
+                priceField.classList.remove('is-invalid');
+                const feedbackElement = priceField.nextElementSibling;
+                if (feedbackElement && feedbackElement.classList.contains('invalid-feedback')) {
+                    feedbackElement.style.display = 'none';
+                }
+            }
+            
+            // Set the cost field
             document.getElementById('cost').value = cost;
             
             // Show cost info

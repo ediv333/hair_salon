@@ -746,7 +746,7 @@ def job():
         total_price = price * quantity
         total_cost = cost  # Cost is already calculated based on quantity in the frontend
         
-        # Determine item category (service or product)
+        # Determine item category (service, product, or promotion)
         item_category = "unknown"
         # Check if item is in services
         for service in services:
@@ -759,6 +759,21 @@ def job():
                 if item.get('name') == item_name:
                     item_category = "product"
                     break
+                    
+        # If not found in services or inventory, check promotions
+        if item_category == "unknown":
+            promotions_path = get_data_file_path('promotions.json')
+            if os.path.exists(promotions_path):
+                try:
+                    with open(promotions_path, 'r', encoding='utf-8') as f:
+                        promotions_data = json.load(f)
+                        for promo in promotions_data:
+                            if promo.get('name') == item_name:
+                                item_category = "promotion"
+                                break
+                except Exception as e:
+                    logger.error(f"Error checking promotions: {e}")
+                    pass
         
         # If no jobs.csv file exists, create it with headers
         jobs_path = get_data_file_path('jobs.csv')
@@ -766,7 +781,23 @@ def job():
             # Ensure data directory exists
             data_dir = get_data_path()
             with open(jobs_path, 'w', newline='', encoding='utf-8') as f:
-                csv.writer(f).writerow(['date', 'customer', 'item', 'quantity', 'price', 'cost', 'category'])
+                csv.writer(f).writerow(['date', 'customer', 'item', 'quantity', 'price', 'cost', 'category', 'promotion_id'])
+
+        # Get promotion ID if this is a promotion
+        promotion_id = None
+        if item_category == "promotion":
+            promotions_path = get_data_file_path('promotions.json')
+            if os.path.exists(promotions_path):
+                try:
+                    with open(promotions_path, 'r', encoding='utf-8') as f:
+                        promotions_data = json.load(f)
+                        for promo in promotions_data:
+                            if promo.get('name') == item_name:
+                                promotion_id = promo.get('id')
+                                break
+                except Exception as e:
+                    logger.error(f"Error finding promotion ID: {e}")
+                    pass
 
         # Append the new job
         with open(jobs_path, 'a', newline='', encoding='utf-8') as f:
@@ -779,7 +810,21 @@ def job():
             except:
                 pass  # Keep the original format if parsing fails
             
-            csv.writer(f).writerow([formatted_date, customer, item_name, quantity, price, total_cost, item_category])
+            # Check if we need to add promotion_id
+            job_row = [formatted_date, customer, item_name, quantity, price, total_cost, item_category]
+            
+            # Only add promotion_id if it exists and if jobs.csv already has the column
+            # Read the first line to check headers
+            with open(jobs_path, 'r', newline='', encoding='utf-8') as check_file:
+                reader = csv.reader(check_file)
+                headers = next(reader, None)
+                
+            # If we have 8 columns and the last is promotion_id, add it
+            if headers and len(headers) >= 8 and headers[-1] == 'promotion_id':
+                job_row.append(promotion_id)
+                
+            # Write the row with the appropriate number of columns
+            csv.writer(f).writerow(job_row)
 
         for item in inventory:
             if item['name'] == item_name:
@@ -919,23 +964,45 @@ def history():
                 available_items = sorted(jobs_df['item'].dropna().unique().tolist())
             
             # Organize items by category for dynamic filtering
-            items_by_category = {'service': [], 'product': []}
+            items_by_category = {'service': [], 'product': [], 'promotion': []}
             if 'item' in jobs_df.columns and 'category' in jobs_df.columns:
-                for category in ['service', 'product']:
+                for category in ['service', 'product', 'promotion']:
                     category_items = jobs_df[jobs_df['category'] == category]['item'].dropna().unique().tolist()
                     items_by_category[category] = sorted(category_items)
+                
+                # Convert any 'unknown' category items that match promotion names to promotion category
+                promotions_path = get_data_file_path('promotions.json')
+                promotion_names = []
+                if os.path.exists(promotions_path):
+                    try:
+                        with open(promotions_path, 'r', encoding='utf-8') as f:
+                            promotions_data = json.load(f)
+                            promotion_names = [p.get('name') for p in promotions_data if p.get('name')]
+                    except Exception as e:
+                        logger.error(f"Error reading promotions for history: {e}")
+                
+                # Update unknown categories to promotion if item name matches
+                if promotion_names:
+                    mask = jobs_df['item'].isin(promotion_names)
+                    jobs_df.loc[mask, 'category'] = 'promotion'
             
             # Convert columns to appropriate types
             for col in ['price', 'quantity', 'cost']:
                 if col in jobs_df.columns:
                     jobs_df[col] = pd.to_numeric(jobs_df[col], errors='coerce').fillna(0)
             
-            # Parse date column
+            # Parse date column and handle missing dates
             if 'date' in jobs_df.columns:
                 try:
                     jobs_df['date'] = pd.to_datetime(jobs_df['date'], errors='coerce')
+                    
+                    # Fill in missing dates with today's date for display
+                    if jobs_df['date'].isna().any():
+                        logger.info(f"Found {jobs_df['date'].isna().sum()} jobs with missing dates. Filling with today's date for display.")
+                        today = pd.Timestamp(datetime.now().date())
+                        jobs_df.loc[jobs_df['date'].isna(), 'date'] = today
                 except Exception as e:
-                    print(f"Error parsing date: {e}")
+                    logger.error(f"Error parsing date: {e}")
             
             # Apply filters
             # Date range filter
